@@ -1,0 +1,65 @@
+# ClientcareX — Apache configuration.
+# Routing, caching and compression.
+
+Options -Indexes
+DirectoryIndex index.php
+
+# --------------------------------------------------------------------------
+# Routing: everything that is not a real file goes to the front controller.
+# --------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Force one canonical host + scheme in production (uncomment when HTTPS is live)
+  # RewriteCond %{HTTPS} off
+  # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+# --------------------------------------------------------------------------
+# Application source is never served directly.
+# --------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteRule ^(app|views|storage)/ - [F,L]
+</IfModule>
+
+# --------------------------------------------------------------------------
+# Caching. Asset URLs carry ?v=<mtime>, so they can be held forever.
+# HTML is revalidated with the ETag the application sends.
+# --------------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css                  "access plus 1 year"
+  ExpiresByType application/javascript    "access plus 1 year"
+  ExpiresByType image/png                 "access plus 1 year"
+  ExpiresByType image/webp                "access plus 1 year"
+  ExpiresByType image/svg+xml             "access plus 1 year"
+  ExpiresByType image/x-icon              "access plus 1 year"
+  ExpiresByType font/woff2                "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|png|webp|svg|ico|woff2?)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  Header unset X-Powered-By
+</IfModule>
+
+# --------------------------------------------------------------------------
+# Compression for static assets. HTML arrives pre-gzipped from PHP, and
+# mod_deflate leaves an already-encoded response alone.
+# --------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml \
+    application/javascript application/json application/xml image/svg+xml
+</IfModule>

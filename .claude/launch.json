@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "clientcarex",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4173"],
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["-S", "localhost:4173", "index.php"],
       "port": 4173
     }
   ]

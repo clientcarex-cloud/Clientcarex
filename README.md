@@ -1,12 +1,105 @@
-# ClientcareX — recovered website
+# ClientcareX — website
 
 A rebuild of `clientcarex.com`, reconstructed from the Wayback Machine capture
 of **29 July 2025** after the original site was lost.
 
 The original was WordPress 6.8.2 + Elementor 3.30.3 running the *Zenix* theme.
-This rebuild is a **dependency-free static site** — no WordPress, no PHP, no
-database, no plugins. It is faster, cheaper to host, and cannot be lost the same
-way again as long as this folder is in version control.
+This rebuild is **plain PHP 8** — no framework, no database, no Composer, no
+build step. It runs on any host with PHP and serves pages from a full-page
+cache, so a warm request costs under a millisecond of PHP time.
+
+---
+
+## How it is put together
+
+```
+index.php              front controller — routes, renders, caches
+.htaccess              clean URLs, cache headers, compression, security headers
+
+app/
+  config.php           site constants, page registry, navigation, footer links
+  content.php          page content as data: plans, FAQs, reviews, modules, steps
+  icons.php            every SVG, defined once
+  helpers.php          e() url() asset() view() part() minify_html()
+  response.php         page cache, gzip, ETag / 304
+  enquiry.php          demo-request validation, CSRF, mail, enquiry log
+
+views/
+  layout.php           the one HTML skeleton
+  partials/            header, footer, plans, faq, split, steps, stats, cta …
+  pages/               one file per page, body only
+  feeds/               sitemap.xml and robots.txt templates
+
+assets/                css, js, images (served straight from disk)
+storage/               cache, enquiry log, signing key — not web-accessible
+```
+
+Nothing is generated and committed. Edit a file, reload the page.
+
+### The two rules that keep it small
+
+1. **Anything repeated is data, not markup.** The three pricing tables are
+   rows in `PLANS`; the FAQ accordion is `FAQS`; reviews, integrations,
+   modules, steps and stats work the same way. Adding a plan feature is one
+   line in `app/content.php`.
+2. **Anything shared is a partial.** The check mark that appeared ~50 times in
+   the old HTML is now `icon('check')`. The hero, section heading, CTA band,
+   contact cards and button rows are each defined once in `views/partials/`.
+
+### Adding a page
+
+1. Add a route to `PAGES` in `app/config.php` (title, description, nav key).
+2. Create `views/pages/<view>.php` with just the body.
+3. Add it to `NAV` if it belongs in the header.
+
+The sitemap and robots.txt pick it up automatically.
+
+---
+
+## Running it
+
+```bash
+php -S localhost:4173 index.php
+```
+
+Then open <http://localhost:4173>. Template edits appear on the next reload —
+the cache invalidates itself whenever a file under `app/` or `views/` changes.
+
+---
+
+## Performance
+
+| What | How |
+|---|---|
+| Full-page cache | Each page is rendered once, minified, and written to `storage/cache/` as plain and pre-gzipped copies. Warm requests skip rendering entirely. |
+| Conditional requests | Every response carries an `ETag`; a returning visitor gets `304 Not Modified` with no body. |
+| Compression | HTML is gzipped once at cache-write time (level 9) rather than on every request. |
+| Immutable assets | CSS, JS and images are served with `?v=<mtime>` and a one-year `immutable` cache header. |
+| No render-blocking JS | 2.6 KB of vanilla JS, deferred. The copyright year and the contact form are handled server-side, so no JS is needed for either. |
+
+Cache invalidation is automatic: the cache key includes a fingerprint of every
+file under `app/` and `views/`, plus the current year. To clear it by hand:
+
+```bash
+rm -rf storage/cache/*
+```
+
+Set `CACHE_ENABLED` to `false` in `app/config.php` to turn it off.
+
+---
+
+## The demo request form
+
+`/contact` posts to itself. Submissions are validated server-side, protected by
+a signed-token CSRF check and a honeypot field, then:
+
+1. appended to `storage/enquiries.log` (one JSON object per line), and
+2. emailed to `MAIL_TO` in `app/config.php` via PHP's `mail()`.
+
+The log is written **before** mail is attempted, so an enquiry is never lost if
+the host's mail transport is unconfigured or down. Check `mailed:false` entries
+in the log after go-live to confirm mail is actually working — and if the host
+blocks `mail()`, swap the call in `app/enquiry.php` for SMTP.
 
 ---
 
@@ -18,122 +111,65 @@ way again as long as this folder is in version control.
 - Brand palette, taken from the original Elementor CSS and the logo artwork:
   deep green `#065845`, lime `#A9FF9B` / `#88E64A`, amber `#FFA012`,
   mint tint `#EBFEF6`, paper `#F4F7F2`, ink `#101010`.
-- Typography: **Plus Jakarta Sans** (headings) and **DM Sans** (body) — the same
-  two families the original loaded.
-- Contact details: `+91 93908 93024`, `care@clientcarex.com` (the email was
-  obfuscated by Cloudflare in the archive and had to be decoded).
-- 22 image assets, in `assets/img/` — logo, favicon, client logos, illustrations
-  and integration icons.
+- Typography: **Plus Jakarta Sans** (headings) and **DM Sans** (body).
+- Contact details: `+91 93908 93024`, `care@clientcarex.com`.
+- 22 image assets, in `assets/img/`.
 - Navigation structure and the five-column footer.
-- App links: login and register still point at `clientcarex.com/ccx/authentication/*`.
+- App links: login and register point at `clientcarex.com/ccx/authentication/*`.
 
 ### Not recoverable
-Only the homepage was ever archived, so these had **no source to restore from**
-and were written fresh in the original's voice and style:
+Only the homepage was ever archived, so these were written fresh in the
+original's voice: `features`, `pricing`, `how-it-works`, `challenge`, `blog`
+(empty state), `contact`, and the three legal pages.
 
-| Page | Status |
-|---|---|
-| `features.html` | Written from the recovered module and pricing lists |
-| `pricing.html` | Wraps the recovered pricing tables + FAQ |
-| `how-it-works.html` | Built from the recovered 3-phase plan in the FAQ |
-| `challenge.html` | Built from the recovered 90-day challenge copy |
-| `blog.html` | Empty state — no posts existed in the archive |
-| `contact.html` | New (the original had no contact page) |
-| `privacy.html`, `terms.html`, `refund.html` | **Templates — need legal review** |
-
-Four testimonial avatar images (`3.png`, `4.png`, `5.png`, `team.png`) returned
-404 from the archive, so reviewer initials are shown in coloured circles instead.
+Four testimonial avatar images returned 404 from the archive, so reviewer
+initials are shown in coloured circles instead — derived from the name, not
+stored separately.
 
 ### Deliberate corrections to the original copy
-The archived page had errors that were fixed rather than reproduced:
-
 - **"Zenix" appeared twice in the body copy** — the WordPress theme name had
-  leaked into the placeholder text ("Discover how Zenix can enhance…",
-  "Zenix is the best"). Replaced with ClientcareX.
-- **Duplicate Slack integration card** — two identical Slack cards were shown,
-  the second using the Zapier icon. The second is now correctly Zapier.
+  leaked into the placeholder text. Replaced with ClientcareX.
+- **Duplicate Slack integration card** — the second is now correctly Zapier.
 - Typos: `cusomter` → customer, `powerfull` → powerful,
   `Annoucement` → Announcement, `Link Shortly` → Link Shortener.
 
 ---
 
-## Working on the site
-
-Pages are assembled from fragments so the header, footer and repeated blocks
-live in one place.
-
-```
-src/pages/*.html      page bodies (the part inside <main>)
-src/partials/*.html   reusable blocks: plans, faq
-build.py              head + header + footer, and the page list
-assets/               css, js, images
-*.html                GENERATED — do not edit directly
-```
-
-Edit anything under `src/`, `assets/` or `build.py`, then rebuild:
-
-```bash
-python3 build.py
-```
-
-That regenerates all 11 pages plus `sitemap.xml` and `robots.txt`.
-
-> **Editing a root `.html` file directly will be overwritten on the next build.**
-> Change the matching file in `src/pages/` instead.
-
-### Preview locally
-
-```bash
-python3 -m http.server 4173
-```
-
-Then open <http://localhost:4173>.
-
-### Add a page
-Add an entry to `PAGES` in `build.py` (slug, nav key, title, description) and
-create `src/pages/<slug>.html` with just the body content. Add it to `NAV_ITEMS`
-too if it belongs in the header.
-
-### Include a shared block
-`{{> plans }}` in any page fragment pulls in `src/partials/plans.html`.
-
-### Add a blog post
-Drop a card into `src/pages/blog.html` inside a `<div class="grid grid--3">`:
-
-```html
-<article class="post">
-  <div class="post__thumb">Post title</div>
-  <div class="post__body">
-    <div class="post__meta"><span>Automation</span><span>5 min read</span></div>
-    <h3>How we cut follow-up time by 70%</h3>
-    <p>Short summary of the post.</p>
-    <a class="link-arrow" href="posts/slug.html">Read more</a>
-  </div>
-</article>
-```
-
----
-
 ## Before this goes live
 
-1. **Have the three legal pages reviewed.** They are drafts, and each carries a
-   visible warning banner that must be removed once the real text is in.
-2. **Wire up the contact form.** `contact.html` has no back end — it currently
-   tells the visitor to email or call instead of silently dropping the enquiry.
-   Point it at Formspree, your own endpoint, or the ClientcareX ticket API, then
-   delete the `data-form` handler in `assets/js/main.js`.
-3. **Fill in the social links.** The four footer icons are `href="#"` placeholders.
-4. **Confirm the two guarantee windows.** The homepage advertises both a 30-day
+1. **Have the three legal pages reviewed.** They are drafts written against the
+   original's voice, not recovered text — the guarantee and liability clauses
+   in particular should be checked against your actual contracts.
+2. **Confirm mail works.** Send a test through `/contact` and check the
+   recipient inbox and `storage/enquiries.log`.
+3. **Fill in the social links.** The four footer icons are `#` placeholders in
+   `SOCIAL` in `app/config.php`.
+4. **Confirm the two guarantee windows.** The homepage advertises a 30-day
    money back guarantee and a 90-day guarantee; make sure the refund policy
    matches what you actually offer.
 5. **Check the client logos.** Eight are shown in the "Trusted by 100+ Teams"
    row — confirm you still have permission to use each one.
+6. **Turn on the HTTPS redirect** in `.htaccess` once the certificate is live.
 
 ## Hosting
 
-Any static host works — Netlify, Vercel, Cloudflare Pages, GitHub Pages, S3, or
-plain nginx/Apache. Upload the folder; there is nothing to install or configure.
-Point `404.html` at your host's not-found handler.
+Any PHP 8.1+ host. Upload the folder, point the document root at it, make sure
+`storage/` is writable by the web server:
+
+```bash
+chmod -R 775 storage
+```
+
+Apache picks up `.htaccess` as-is. On nginx, route unknown paths to the front
+controller and deny the source directories:
+
+```nginx
+location / { try_files $uri $uri/ /index.php; }
+location ~ ^/(app|views|storage)/ { deny all; }
+```
+
+Old `*.html` URLs 301-redirect to their clean equivalents, so existing links
+and search results keep working.
 
 ## Recovery source
 

@@ -1,0 +1,87 @@
+<?php part('page-hero', [
+    'crumb' => 'Privacy Policy',
+    'title' => 'Privacy Policy',
+    'lede'  => 'How Clientcarex Private Limited collects, uses and protects your data.',
+]) ?>
+
+<section class="section">
+  <div class="container prose">
+
+    <h2>1. Who we are</h2>
+    <p>
+      <?= COMPANY ?> (“ClientcareX”, “we”, “us”) provides AI-driven
+      ERP and business automation software. For any privacy question, contact us
+      at <a href="mailto:<?= EMAIL ?>"><?= EMAIL ?></a> or
+      <?= PHONE ?>.
+    </p>
+
+    <h2>2. Information we collect</h2>
+    <ul>
+      <li><strong>Account data</strong> — name, work email, phone number, company name and role.</li>
+      <li><strong>Customer content</strong> — the records your team stores in ClientcareX, such as leads, clients, tickets, HR records and invoices.</li>
+      <li><strong>Usage data</strong> — log-in times, feature usage, device and browser information, and IP address.</li>
+      <li><strong>Communications</strong> — messages you send to support, sales or via forms on this site.</li>
+    </ul>
+
+    <h2>3. How we use it</h2>
+    <ul>
+      <li>To provide, secure and improve the ClientcareX platform.</li>
+      <li>To deliver implementation, onboarding and support services.</li>
+      <li>To send service notices and, where you have opted in, product updates.</li>
+      <li>To meet legal, tax and accounting obligations.</li>
+    </ul>
+
+    <h2>4. Legal basis</h2>
+    <p>
+      We process personal data to perform our contract with you, to meet legal
+      obligations, on the basis of your consent where required, and for our
+      legitimate interest in operating and securing the service.
+    </p>
+
+    <h2>5. Sharing</h2>
+    <p>
+      We do not sell personal data. We share it only with sub-processors that
+      help us run the service — such as hosting, email delivery, payment and
+      analytics providers — under contracts that restrict their use of it, and
+      with authorities where the law requires.
+    </p>
+
+    <h2>6. Retention</h2>
+    <p>
+      Account and customer content is retained for as long as your subscription
+      is active, and afterwards only as long as needed for legal, accounting or
+      dispute-resolution purposes.
+    </p>
+
+    <h2>7. Your rights</h2>
+    <p>
+      Subject to applicable law, you may request access to, correction of, or
+      deletion of your personal data, object to certain processing, or ask for a
+      portable copy. Write to
+      <a href="mailto:<?= EMAIL ?>"><?= EMAIL ?></a> and we will
+      respond within the period the law allows.
+    </p>
+
+    <h2>8. Security</h2>
+    <p>
+      We apply access controls, encryption in transit, and regular backups. No
+      system is perfectly secure, so please use a strong, unique password and
+      enable any additional protections we offer.
+    </p>
+
+    <h2>9. Cookies</h2>
+    <p>
+      This website uses cookies that are necessary for it to function, and — with
+      your consent where required — analytics cookies that tell us which pages
+      are useful. You can clear or block cookies in your browser settings.
+    </p>
+
+    <h2>10. Changes</h2>
+    <p>
+      We will post any update to this policy on this page and revise the date
+      below. Material changes will also be notified to account holders by email.
+    </p>
+
+    <p class="muted" style="margin-top:2rem">Last updated: <?= date('Y') ?></p>
+  </div>
+</section>

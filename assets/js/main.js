@@ -70,27 +70,4 @@
     revealables.forEach(function (el) { observer.observe(el); });
   }
 
-  /* ---------------------------------------------------------------------
-     Current year in the footer
-     --------------------------------------------------------------------- */
-  document.querySelectorAll("[data-year]").forEach(function (el) {
-    el.textContent = String(new Date().getFullYear());
-  });
-
-  /* ---------------------------------------------------------------------
-     Demo/contact form — no back end is wired up yet, so make that explicit
-     rather than silently swallowing an enquiry.
-     --------------------------------------------------------------------- */
-  document.querySelectorAll("form[data-form]").forEach(function (form) {
-    form.addEventListener("submit", function (event) {
-      event.preventDefault();
-      var status = form.querySelector("[data-form-status]");
-      if (status) {
-        status.hidden = false;
-        status.textContent =
-          "This form is not connected to a mail service yet. " +
-          "Please email care@clientcarex.com or call +91 93908 93024 in the meantime.";
-      }
-    });
-  });
 })();
