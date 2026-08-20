@@ -1,6 +1,6 @@
 <?php
 /**
- * Demo-request handling for /contact.
+ * Growth-audit enquiry handling for /contact.
  *
  * Stateless CSRF (an HMAC-signed timestamp) so no session cookie is set and
  * the rest of the site stays fully cacheable. Every enquiry is appended to
@@ -81,8 +81,9 @@ function handle_enquiry(): array
         'company' => $field('company'),
         'email'   => $field('email'),
         'phone'   => $field('phone'),
-        'team'    => $field('team'),
-        'message' => trim((string) ($_POST['message'] ?? '')),
+        'interest' => $field('interest'),
+        'revenue'  => $field('revenue'),
+        'message'  => trim((string) ($_POST['message'] ?? '')),
     ];
 
     // Honeypot: a real browser never fills a hidden field.
@@ -116,7 +117,7 @@ function handle_enquiry(): array
     $domain = (string) parse_url(SITE_URL, PHP_URL_HOST);
     $mailed = @mail(
         MAIL_TO,
-        'Demo request — ' . $values['name'] . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : ''),
+        'Growth audit request — ' . $values['name'] . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : ''),
         $body,
         [
             'From'         => SITE_NAME . ' <no-reply@' . $domain . '>',

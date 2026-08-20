@@ -1,134 +1,290 @@
 <?php
 /**
- * Page content as data. Anything that was repeated markup — plan tables,
- * FAQs, integration cards, reviews, modules, steps — is a row in an array
- * here and is rendered once by a partial.
+ * Page content as data. Anything that was repeated markup — the commercial
+ * models, FAQs, service grids, steps, reviews — is a row in an array here and
+ * is rendered once by a partial.
  */
 declare(strict_types=1);
 
-/** Pricing tables, shown on the homepage and the pricing page. */
-const PLANS = [
+/* ==========================================================================
+   The two commercial models
+   ========================================================================== */
+
+/**
+ * Shown on the homepage and the pricing page.
+ *
+ *   price / period   the headline number and what it is charged against
+ *   covers           what the fee already includes — the differentiator
+ *   terms            the small print under the button
+ *   link             [label, route] to the page that explains the model
+ */
+const MODELS = [
     [
-        'name'    => 'Professional',
-        'badge'   => 'Save 25%',
-        'price'   => '₹499',
-        'summary' => 'Essential tools to manage your business smoothly.',
-        'terms'   => '5 user minimum • Yearly billing',
-        'features' => [
-            'Leads Management',
-            'Clients Management',
-            'Sales Management',
-            'Auto Payment Reminders',
-            'Auto Greetings & Wishes to Customers, Staff & Leads',
-            'Docs & SOPs (25+)',
-            'Tasks Management',
-            'HR Records',
-            'HR Payroll',
-            'HR Attendance & Leave',
-            'Expense Management',
-            'Contacts Management',
-            'Knowledge Base',
-            'Staff Announcements',
-            'Activity Logs',
-        ],
-    ],
-    [
-        'name'     => 'Business',
-        'badge'    => 'Save 25% • Most popular',
-        'price'    => '₹799',
-        'summary'  => 'Smarter workflow with semi-automation and AI power.',
-        'terms'    => '10 user minimum • Yearly billing',
+        'name'     => 'Performance Marketing',
+        'badge'    => 'Pay from revenue',
         'featured' => true,
-        'inherits' => 'Professional',
+        'price'    => SHARE_RANGE,
+        'period'   => 'of the revenue we generate',
+        'tagline'  => 'You pay for results, nothing else',
+        'summary'  => 'No setup fee. No retainer. No ad budget from you. We fund the whole campaign and take a share of what it produces.',
         'features' => [
-            'Leads Integrations (30+)',
-            'Bulk Promotional SMS',
-            'WhatsApp Official',
-            'Leads Auto Follow-up',
-            'Leads Rollercoaster',
-            'Survey Forms & QnAs',
-            'Testimonial Forms',
-            'Dashboard Banner',
-            'Team Chat',
-            'Ticket Support System',
-            'Appointments Booking',
-            'Staff Reminders',
+            'Ad spend on every channel — funded by us',
+            'Media buyers, strategists and analysts — our team',
+            'Creative production: video, static, copy',
+            'Landing pages, funnels and CRO',
+            'Tools and subscriptions we run the account on',
+            'Tracking, attribution and monthly reconciliation',
+            'Reporting dashboard you can open any day',
         ],
+        'terms' => 'Exact rate agreed in writing before launch',
+        'cta'   => ['Get a revenue plan', 'contact'],
+        'link'  => ['How the revenue share works', 'performance-marketing'],
     ],
     [
-        'name'     => 'Enterprise',
-        'badge'    => 'Save 80%',
-        'price'    => '₹1,400',
-        'summary'  => 'Full automation for 10x growth and zero manual effort.',
-        'terms'    => '10 user minimum • Yearly billing',
-        'inherits' => 'Business',
+        'name'    => 'Business Automation',
+        'badge'   => 'Scoped quote',
+        'price'   => 'Scope-based',
+        'period'  => 'quoted per build',
+        'tagline' => 'Priced on your work scope',
+        'summary' => 'We map your processes, write the scope, then quote it. One number for the build — no per-seat licence, no surprise line items.',
         'features' => [
-            'Bulk SMS, WhatsApp & Email',
-            'Use your own Domain',
-            'Payment Gateway Integration',
-            'Auto Smart Accounting',
-            'Google Workspace Integrated',
-            'GMap Leads Finder',
-            'Landing Pages for Digital Marketing',
-            'Link Shortener & Tracking',
-            'Google Analytics Integrated',
-            'Approvals Management',
-            'Project Management',
-            'Affiliate Management',
-            'Referral Management',
-            'AI Ticketing Support',
-            'Telecalling Integrated',
-            'AI Call Agents Integrated',
-            'AI Prompt Reports & Charts',
+            'Process discovery and a written workflow map',
+            'Fixed quote against an agreed scope document',
+            'CRM, lead routing and follow-up automation',
+            'Billing, approvals, HR and support workflows',
+            'Integrations with the tools you already pay for',
+            'AI agents for chat, ticketing and telecalling',
+            'Handover, SOPs and team training included',
         ],
+        'terms' => 'Free audit first — the quote follows the scope',
+        'cta'   => ['Scope my automation', 'contact'],
+        'link'  => ['How scoping works', 'business-automation'],
+    ],
+    [
+        'name'    => 'Growth Partner',
+        'badge'   => 'Both engines',
+        'price'   => 'Share + scope',
+        'period'  => 'one engagement',
+        'tagline' => 'Acquisition and operations together',
+        'summary' => 'Run both models side by side: we generate the demand on revenue share, and build the automation that stops it leaking on scope.',
+        'features' => [
+            'Everything in Performance Marketing',
+            'Everything in Business Automation',
+            'One team across acquisition and operations',
+            'Leads flow straight into automated follow-up',
+            'Ad data and CRM data in the same reporting',
+            'Single point of contact and one review cadence',
+            'Automation scope priced with the partnership in mind',
+        ],
+        'terms' => 'Best fit when demand and delivery both need work',
+        'cta'   => ['Talk about a partnership', 'contact'],
+        'link'  => ['See how an engagement runs', 'how-it-works'],
     ],
 ];
 
-/** Shown on the homepage, pricing page and contact page. */
-const FAQS = [
-    [
-        'q' => 'What is the 90-Day Business Automation Challenge?',
-        'a' => '<p>The 90-Day Challenge is our bold promise to automate, streamline and transform your business operations using AI and ERP solutions — delivering real, measurable results in just 90 days.</p>',
-    ],
-    [
-        'q' => 'What kind of businesses do you work with?',
-        'a' => '<p>We work with SMEs, startups and growing enterprises across industries like retail, healthcare, services, manufacturing and education. If you have manual processes, we can automate them.</p>',
-    ],
-    [
-        'q' => 'What areas of my business will be automated?',
-        'a' => '<p>Our AI-driven ERP and automation solutions can streamline:</p>
-          <ul>
-            <li>CRM &amp; sales pipelines</li>
-            <li>Inventory &amp; billing</li>
-            <li>HR &amp; payroll</li>
-            <li>Customer support (AI chat &amp; call agents)</li>
-            <li>Workflow approvals</li>
-            <li>Reports &amp; dashboards</li>
-            <li>Marketing &amp; outreach automation</li>
-          </ul>',
-    ],
-    [
-        'q' => 'Is this a ready-made ERP or custom-built?',
-        'a' => '<p>We offer a core AI-powered ERP that is tailored specifically for your business workflows, integrations and objectives — fully customised to suit your operations.</p>',
-    ],
-    [
-        'q' => 'How do you guarantee transformation in 90 days?',
-        'a' => '<p>We follow a proven 3-phase plan:</p>
-          <ol>
-            <li>Understanding &amp; workflows (week 1–2)</li>
-            <li>Automation &amp; customisation (week 3–8)</li>
-            <li>Implementation &amp; scaling (week 9–13)</li>
-          </ol>
-          <p style="margin-top:.75rem">Backed by KPIs, AI tools and ERP modules that evolve with your business.</p>',
-    ],
-    [
-        'q' => 'What makes your solution different from Zoho, Odoo or others?',
-        'a' => '<p>We blend powerful AI automation, ERP and business consulting into one streamlined solution. Unlike generic platforms, we focus on outcomes, not just tools — with hands-on implementation, not just subscriptions.</p>',
-    ],
-    [
-        'q' => "Is there a money-back guarantee if it doesn't work?",
-        'a' => "<p>Yes. If we don't deliver any automation or process improvements within 90 days, we offer a risk-free money-back guarantee as per our terms.</p>",
-    ],
+/**
+ * The ledger that makes the revenue-share model concrete: every cost that
+ * usually lands on the client sits on our side of it.
+ */
+const LEDGER_OURS = [
+    'Ad spend across every channel we run',
+    'Media buyers, strategists, analysts and account managers',
+    'Creative production — video, static, motion, copywriting',
+    'Landing pages, funnels and conversion-rate optimisation',
+    'Software subscriptions: ad tools, CRM, analytics, automation',
+    'Stock assets, licensing and production costs',
+    'Tracking, attribution and reporting infrastructure',
+    'Testing, iteration and day-to-day campaign management',
+];
+
+const LEDGER_YOURS = [
+    'Your product or service, and fulfilling the orders we bring',
+    'A ' . SHARE_RANGE . ' share of the revenue we generate — agreed up front',
+    'Payment gateway and platform fees on your own sales',
+    'Access to your ad accounts, analytics, CRM and brand assets',
+    'Timely sign-off on offers, creative and landing pages',
+];
+
+/* ==========================================================================
+   Services
+   ========================================================================== */
+
+/** Performance marketing: what we actually run. */
+const MARKETING_SERVICES = [
+    ['target', 'Paid Media', [
+        'Meta Ads — Facebook and Instagram',
+        'Google Ads — Search, Performance Max, Shopping',
+        'YouTube and video campaigns',
+        'LinkedIn for B2B and high-ticket',
+        'Native, display and retargeting',
+        'Budget allocation across the mix',
+    ]],
+    ['video', 'Creative Production', [
+        'Ad concepts written against the offer',
+        'UGC-style and studio video',
+        'Static, carousel and motion assets',
+        'Copywriting and hook testing',
+        'Creative refresh on a fixed cadence',
+        'Winning-ad breakdowns in reporting',
+    ]],
+    ['funnel', 'Funnels & CRO', [
+        'Landing pages built for the campaign',
+        'Offer and pricing structure',
+        'Form, checkout and lead-capture optimisation',
+        'A/B testing on page and offer',
+        'Speed, mobile and tracking hygiene',
+        'Post-click journey mapping',
+    ]],
+    ['megaphone', 'Lifecycle & Retention', [
+        'WhatsApp, SMS and email sequences',
+        'Abandoned cart and abandoned lead recovery',
+        'Win-back and reactivation campaigns',
+        'Upsell and cross-sell journeys',
+        'Review and referral prompts',
+        'Repeat revenue counted the same way',
+    ]],
+    ['search', 'Organic & Content', [
+        'SEO for the pages that convert',
+        'Landing page and category content',
+        'Google Business Profile and local search',
+        'Social content that supports paid',
+        'Marketplace listing optimisation',
+        'Content repurposed into ad creative',
+    ]],
+    ['trending', 'Tracking & Reporting', [
+        'Server-side and pixel tracking setup',
+        'UTM, coupon and CRM-stage attribution',
+        'Live dashboard with revenue by source',
+        'Monthly reconciliation against your books',
+        'Cohort, LTV and payback reporting',
+        'Everything we invoice is traceable to a source',
+    ]],
+];
+
+/** Business automation: what we build. */
+const AUTOMATION_SERVICES = [
+    ['users', 'Sales & CRM', [
+        'Lead capture from every source into one pipeline',
+        'Automatic routing, scoring and owner assignment',
+        'Follow-up sequences across call, WhatsApp and email',
+        'Quotation and proposal generation',
+        'Pipeline stages that match how you actually sell',
+        'Re-engagement of cold and lost leads',
+    ]],
+    ['wallet', 'Billing & Finance', [
+        'Invoice generation and delivery',
+        'Automatic payment reminders and dunning',
+        'Payment gateway reconciliation',
+        'Expense capture and approval flows',
+        'Recurring and subscription billing',
+        'Revenue and receivables dashboards',
+    ]],
+    ['briefcase', 'HR & Internal Ops', [
+        'Attendance, leave and shift workflows',
+        'Payroll inputs and payslip distribution',
+        'Onboarding and offboarding checklists',
+        'Approval chains for spend and documents',
+        'Task assignment and SLA tracking',
+        'Activity logs and audit trails',
+    ]],
+    ['chat', 'Support & Service', [
+        'Ticketing across email, chat, social and phone',
+        'AI first-response and intent routing',
+        'AI voice agents for calls and callbacks',
+        'Knowledge base and canned resolutions',
+        'Appointment booking and reminders',
+        'CSAT capture and escalation rules',
+    ]],
+    ['link', 'Integrations', [
+        'Connect the CRM, ad platforms and accounting',
+        'Two-way sync so no system is the odd one out',
+        'WhatsApp Business API and SMS gateways',
+        'Payment gateways and marketplaces',
+        'Google Workspace, Sheets and Analytics',
+        'Custom API work where an off-the-shelf connector stops',
+    ]],
+    ['sparkle', 'AI & Reporting', [
+        'AI agents for repetitive back-office work',
+        'Prompt-driven reports and charts',
+        'Document and data extraction',
+        'Anomaly alerts on the numbers that matter',
+        'Role-based dashboards for owners and managers',
+        'Weekly digests pushed to the people who act on them',
+    ]],
+];
+
+/** Homepage: the three reasons the model works. */
+const PILLARS = [
+    ['Group-114.svg', 'Our money is at risk first', 'We pay for the ads, the team and the tools before you pay us anything. If the campaign does not produce revenue, we carry that cost — not you.'],
+    ['Group-115.svg', 'Priced against your revenue, not our hours', 'A retainer gets paid whether it works or not. A revenue share only grows when your revenue does, so the incentive never points the wrong way.'],
+    ['Group-113.svg', 'Demand and delivery, handled together', 'Winning the lead is half of it. We also build the automation that follows up, bills, supports and retains — so growth does not break operations.'],
+];
+
+/** Homepage: where the revenue-share model fits, and where it does not. */
+const FIT_YES = [
+    'You have a proven product with real margin',
+    'You can fulfil more orders than you get today',
+    'Sales are trackable — online checkout, CRM or booked jobs',
+    'You want to grow without funding a marketing budget',
+    'You can give us access to accounts and data',
+];
+
+const FIT_NO = [
+    'Pre-launch with nothing to sell yet',
+    'Margins too thin to carry a revenue share',
+    'Revenue that cannot be attributed to a source at all',
+    'Fulfilment already at capacity',
+    'You need day-to-day creative control of every ad',
+];
+
+/* ==========================================================================
+   Process
+   ========================================================================== */
+
+/** How an engagement runs, end to end. Used on how-it-works and the homepage. */
+const STEPS_ENGAGEMENT = [
+    ['Step one • Free', 'Growth audit', "We look at what you sell, what it costs you to deliver, where your revenue comes from today and what is already tracked. You get a written read on whether the revenue-share model can work for you — including when the answer is no."],
+    ['Step two • Free', 'Model and scope', 'For marketing we agree the share rate, the channels, the revenue that counts and how it is measured. For automation we map your processes and write a scope document, which is what the fixed quote is built from. Nothing is signed before both are on paper.'],
+    ['Step three', 'Build and launch', 'Tracking and attribution go in first so the numbers are trustworthy from day one. Then creative, funnels and campaigns go live, or the automation gets built module by module with you reviewing each one as it lands.'],
+    ['Step four', 'Scale and report', 'You get a live dashboard and a monthly reconciliation. We scale what pays back, kill what does not, and invoice only against revenue that both sides can see in the same report.'],
+];
+
+/** The marketing engagement, told at campaign depth. */
+const STEPS_MARKETING = [
+    ['Week 0', 'Audit and attribution', 'Before a rupee of ad spend, we set up tracking: pixels, server-side events, UTMs, coupon codes or CRM stages — whichever proves where revenue came from in your business. Both sides sign off on what counts as revenue we generated.'],
+    ['Week 1–2', 'Offer, creative and funnel', 'We build the landing pages and the first creative batch against your offer, and stand up the lifecycle sequences that catch the traffic that does not convert on the first visit.'],
+    ['Week 3–6', 'Launch and find the winners', 'Campaigns go live on our budget. We test angles, audiences and creative hard in this window, and you watch cost-per-acquisition and tracked revenue move on the dashboard as it happens.'],
+    ['Month 2 onward', 'Scale and reconcile', 'Budget moves to what pays back. Each month we reconcile tracked revenue against your own books, agree the number, and invoice the share against it.'],
+];
+
+/** The automation engagement, told at implementation depth. */
+const STEPS_AUTOMATION = [
+    ['Phase 1', 'Discovery and workflow map', 'We sit with the people who do the work and map how the business actually runs — every handoff, spreadsheet and message thread holding a process together. The output is a written workflow map, not a slide deck.'],
+    ['Phase 2', 'Scope and fixed quote', 'The map becomes a scope document: which processes, which integrations, which systems, what is explicitly out. That document is what the fixed price is quoted against, so scope changes are a conversation rather than an invoice surprise.'],
+    ['Phase 3', 'Build and review', 'We build in reviewable pieces. You see each workflow working on your own data before we move to the next, so nothing is discovered at handover.'],
+    ['Phase 4', 'Handover and support', 'Training, SOPs and a support line. Your team owns the system; we stay available for tuning and for the next set of processes when you are ready.'],
+];
+
+/* ==========================================================================
+   Proof and numbers
+   ========================================================================== */
+
+/**
+ * Structural numbers only — these describe how we charge, not results we
+ * claim. Replace or extend with audited client outcomes when you have them.
+ */
+const STATS_MODEL = [
+    ['₹0', 'Setup fee, ever'],
+    ['₹0', 'Monthly retainer'],
+    ['₹0', 'Ad spend from your pocket'],
+    [SHARE_RANGE, 'Of tracked revenue — that is the whole bill'],
+];
+
+const STATS_ENGAGEMENT = [
+    ['2', 'Free steps before anything is signed'],
+    ['1', 'Invoice line — the revenue share'],
+    ['30', 'Days notice to end a marketing engagement'],
+    ['100%', 'Of what we bill is traceable to a source'],
 ];
 
 /** Homepage: client logo row. */
@@ -143,127 +299,109 @@ const CLIENT_LOGOS = [
     ['new-mrbeat.png', 'Mr Beat', 552, 195],
 ];
 
-/** Homepage: the three pillars. */
-const PILLARS = [
-    ['Group-114.svg', 'Multi-Channel Support', 'Manage customer inquiries from various channels — including email, social media, live chat and phone — all in one place.'],
-    ['Group-115.svg', 'Customizable Workflows', 'Customise workflows to match your business processes and preferences, from automated responses through to ticket routing.'],
-    ['Group-113.svg', 'Seamless Integrations', 'Integrates with popular business tools such as CRM systems, project management software and communication platforms.'],
+/**
+ * PLACEHOLDER COPY — these are not real client quotes.
+ * The originals were Elementor filler text and were never attributable.
+ * Replace every row with a quote you have written permission to publish,
+ * or delete the constant and the review section that renders it.
+ * See "Before this goes live" in README.md.
+ */
+const REVIEWS = [
+    ['Client name', 'Role, Company', 'Placeholder — replace with a real client quote about the revenue-share model before launch.'],
+    ['Client name', 'Role, Company', 'Placeholder — replace with a real client quote about paid media results before launch.'],
+    ['Client name', 'Role, Company', 'Placeholder — replace with a real client quote about an automation build before launch.'],
+    ['Client name', 'Role, Company', 'Placeholder — replace with a real client quote about working with the team before launch.'],
 ];
 
-/** Homepage: integration cards. */
+/** PLACEHOLDER — see the note on REVIEWS. */
+const QUOTE = [
+    'text' => 'Placeholder pull quote. Replace with a real, attributable client quote before this site goes live.',
+    'name' => 'Client name',
+    'role' => 'Role, Company',
+];
+
+/** Business automation page: platforms we connect to. */
 const INTEGRATIONS = [
-    ['Slack', 'Productivity', 'tool-slack.svg', 'Notify your teammates of the latest activities with instant Slack messages.'],
-    ['Zapier', 'Productivity', 'tool-zapier.svg', 'Chain ClientcareX into 5,000+ apps and trigger actions without writing code.'],
-    ['HubSpot', 'CRM', 'tool-hubspot.svg', 'Keep contacts, deals and lifecycle stages in sync between HubSpot and ClientcareX.'],
-    ['PayPal', 'Payment', 'tool-paypal.svg', 'Collect payments against invoices and reconcile them automatically.'],
-    ['Stripe', 'Payment', 'tool-stripe.svg', 'Take card payments and subscriptions with settlement data flowing straight into accounting.'],
+    ['Slack', 'Internal comms', 'tool-slack.svg', 'Push lead alerts, approvals and SLA breaches into the channel that owns them.'],
+    ['Zapier', 'Glue', 'tool-zapier.svg', 'Reach 5,000+ apps when a direct integration is not worth building from scratch.'],
+    ['HubSpot', 'CRM', 'tool-hubspot.svg', 'Keep contacts, deals and lifecycle stages in sync in both directions.'],
+    ['Stripe', 'Payments', 'tool-stripe.svg', 'Card and subscription payments reconciled straight into your reporting.'],
+    ['PayPal', 'Payments', 'tool-paypal.svg', 'Collect against invoices and match receipts automatically.'],
     ['Salesforce', 'CRM', 'tool-salesforce.svg', 'Two-way sync for accounts, opportunities and activity history.'],
 ];
 
-/** Homepage: reviews. Initials for the avatar are derived from the name. */
-const REVIEWS = [
-    ['Ami Smith', 'Shop Keeper', 'Experience powerful project management tools that streamline your workflow, all while staying within your budget.'],
-    ['Khyati', 'Web Designer', 'Experience powerful project management tools that streamline your workflow, all while staying within your budget.'],
-    ['Chiranjit', 'Business Owner', 'Access advanced features to boost your project management efficiency, without breaking the bank — ClientcareX is the best.'],
-    ['Achara', 'Youtuber', 'Enjoy a range of features designed to enhance your project management experience, all at a price that fits your budget.'],
+/* ==========================================================================
+   FAQs
+   ========================================================================== */
+
+const FAQS = [
+    [
+        'q' => 'How does the ' . SHARE_RANGE . ' revenue share actually work?',
+        'a' => '<p>We agree a percentage before anything launches. Each month we report the revenue our campaigns generated, reconcile it against your own books, and invoice that agreed percentage of the agreed figure. There is no setup fee, no retainer and no minimum spend from you — the share is the entire bill.</p>',
+    ],
+    [
+        'q' => 'What exactly do you pay for?',
+        'a' => '<p>Everything it takes to run the campaign:</p>
+          <ul>
+            <li>Ad spend on every channel we run</li>
+            <li>Media buyers, strategists, analysts and account managers</li>
+            <li>Creative production — video, static, motion and copy</li>
+            <li>Landing pages, funnels and CRO work</li>
+            <li>Software subscriptions, tools and stock assets</li>
+            <li>Tracking, attribution and reporting infrastructure</li>
+          </ul>
+          <p style="margin-top:.75rem">You cover your own product, fulfilment and payment gateway fees — and the revenue share.</p>',
+    ],
+    [
+        'q' => 'What decides whether the rate is ' . SHARE_MIN . ' or ' . SHARE_MAX . '?',
+        'a' => '<p>Mainly your margin, your average order value and how much of the funnel we take over. High-volume, thinner-margin businesses sit at the lower end; engagements where we own creative, funnel, lifecycle and channel mix end to end sit at the higher end. The number is fixed in writing before launch, not adjusted afterwards.</p>',
+    ],
+    [
+        'q' => 'How do you prove which revenue you generated?',
+        'a' => '<p>Attribution is set up before the first campaign goes live, and both sides agree what counts. Depending on the business that means pixel and server-side tracking, dedicated landing pages, unique coupon codes, call tracking numbers, or a CRM source stage. Every month the tracked figure is reconciled against your own sales records — we invoice against the agreed number, not our dashboard alone.</p>',
+    ],
+    [
+        'q' => 'What about refunds, cancellations and returns?',
+        'a' => '<p>Only realised revenue counts. Refunded, cancelled, returned and never-collected orders are removed from the figure before the share is calculated, and anything that slips past a monthly cut-off is adjusted on the next invoice.</p>',
+    ],
+    [
+        'q' => 'How is business automation priced?',
+        'a' => '<p>On your work scope and the implementation it needs — not per user and not per month. We run a free discovery, write a scope document covering the processes, integrations and systems involved, and quote a fixed price against it. If the scope changes later, we re-quote the change rather than absorbing it quietly or billing it as a surprise.</p>',
+    ],
+    [
+        'q' => 'Do I have to take both services?',
+        'a' => '<p>No. Plenty of clients take one. They do work well together — acquisition that fills the pipeline, automation that stops it leaking — and the Growth Partner engagement runs both under one team and one review cadence.</p>',
+    ],
+    [
+        'q' => 'Who owns the ad accounts, creative and data?',
+        'a' => '<p>You do. Campaigns run in accounts you own or have full access to, creative produced for you is yours, and your customer data stays yours throughout and after the engagement. The specifics are written into the agreement.</p>',
+    ],
+    [
+        'q' => 'What if it does not work?',
+        'a' => "<p>Then you have paid nothing on the marketing side — that is the point of the model, and the reason we audit carefully before taking a client on. Either side can end a marketing engagement on 30 days' written notice, with the share settled on revenue generated up to that date.</p>",
+    ],
 ];
 
-/** The pull quote used on the risk-free band. */
-const QUOTE = [
-    'text' => 'The platform is user-friendly and has improved our response times significantly. Our team and customers are happier than ever.',
-    'name' => 'James Wilson',
-    'role' => 'IT Support Specialist',
+/* ==========================================================================
+   Forms
+   ========================================================================== */
+
+/** What the enquirer is after — drives routing on our side. */
+const INTERESTS = [
+    'Performance marketing (revenue share)',
+    'Business automation (scoped build)',
+    'Both — growth partnership',
+    'Not sure yet',
 ];
 
-/** Features page: module grid. */
-const MODULES = [
-    ['users', 'Leads & CRM', [
-        'Leads management with stages and owners',
-        'Leads integrations (30+ sources)',
-        'Leads auto follow-up sequences',
-        'Leads Rollercoaster re-engagement',
-        'GMap Leads Finder',
-        'Contacts management',
-    ]],
-    ['chart', 'Sales & Clients', [
-        'Clients management',
-        'Sales management and pipelines',
-        'Proposals with dynamic pricing tables',
-        'Auto payment reminders',
-        'Payment gateway integration',
-        'Auto smart accounting',
-    ]],
-    ['briefcase', 'HR & People', [
-        'HR records',
-        'HR payroll',
-        'Attendance & leave',
-        'Staff announcements and reminders',
-        'Approvals management',
-        'Activity logs',
-    ]],
-    ['chat', 'Support & Service', [
-        'Ticket support system',
-        'AI ticketing support',
-        'Multi-channel inbox: email, chat, social, phone',
-        'Knowledge base',
-        'Appointments booking',
-        'Team chat',
-    ]],
-    ['bolt', 'Marketing & Outreach', [
-        'Bulk SMS, WhatsApp & email',
-        'WhatsApp Official API',
-        'Landing pages for digital marketing',
-        'Link shortener & click tracking',
-        'Survey forms, QnAs and testimonial forms',
-        'Referral and affiliate management',
-    ]],
-    ['cog', 'AI & Automation', [
-        'AI call agents integrated',
-        'Telecalling integrated',
-        'AI prompt reports & charts',
-        'Customisable workflow automation',
-        'Auto greetings and wishes',
-        'Docs & SOPs library (25+)',
-    ]],
+/** Monthly revenue bands on the enquiry form. */
+const REVENUE_BANDS = [
+    'Pre-revenue',
+    'Under ₹5 lakh / month',
+    '₹5–25 lakh / month',
+    '₹25 lakh–1 crore / month',
+    'Over ₹1 crore / month',
 ];
-
-/** Challenge page: what gets automated. */
-const CHALLENGE_SCOPE = [
-    [null, 'Revenue', ['CRM & sales pipelines', 'Lead capture and auto follow-up', 'Proposals and payment reminders']],
-    [null, 'Operations', ['Inventory & billing', 'Workflow approvals', 'Reports & dashboards']],
-    [null, 'People & service', ['HR & payroll', 'Customer support with AI chat & call agents', 'Marketing & outreach automation']],
-];
-
-/** The 3-phase plan, told at implementation depth on how-it-works. */
-const STEPS_IMPLEMENTATION = [
-    ['Week 1–2', 'Understanding & workflows', 'We map how your business actually runs today — every handoff, every spreadsheet, every message thread that holds a process together. You get a written workflow map and an agreed set of KPIs before a single module is configured.'],
-    ['Week 3–8', 'Automation & customisation', 'The core AI-powered ERP is tailored to those workflows: lead routing, follow-up sequences, approvals, payroll rules, ticket queues, integrations and reporting. You review each module as it lands rather than at the end.'],
-    ['Week 9–13', 'Implementation & scaling', "Your team moves onto the system with training, SOPs and a support line. We watch the KPIs with you, tune the automations that aren't paying off, and plan the next set of processes to absorb."],
-];
-
-/** The same plan, told as the challenge programme. */
-const STEPS_CHALLENGE = [
-    ['Week 1–2', 'Understanding & workflows', 'Process discovery across sales, operations, HR and support. We agree the KPIs the challenge will be judged on before anything is built.'],
-    ['Week 3–8', 'Automation & customisation', 'Your ERP is configured module by module: CRM and sales pipelines, inventory and billing, HR and payroll, AI chat and call agents, workflow approvals, dashboards and outreach automation.'],
-    ['Week 9–13', 'Implementation & scaling', 'Rollout, training, SOPs and tuning. By the end of the window you have live automations and a KPI report showing what moved.'],
-];
-
-const STATS_PRICING = [
-    ['30', 'Day money back guarantee'],
-    ['90', 'Day transformation programme'],
-    ['2,000+', 'Users on the platform'],
-    ['100+', 'Teams already scaling'],
-];
-
-const STATS_CHALLENGE = [
-    ['90', 'Days from kickoff to measured results'],
-    ['3', 'Phases, each with its own checkpoint'],
-    ['100+', 'Teams already through the programme'],
-    ['0', "Risk — money back if we don't deliver"],
-];
-
-/** Team-size options on the demo form. */
-const TEAM_SIZES = ['1–5', '6–10', '11–25', '26–100', '100+'];
 
 /** Initials for an avatar circle: "Ami Smith" -> "AS", "Khyati" -> "K". */
 function initials(string $name): string

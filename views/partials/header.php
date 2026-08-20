@@ -19,6 +19,6 @@
       <?php part('auth-buttons') ?>
     </nav>
 
-    <?php part('auth-buttons', ['class' => 'header-actions']) ?>
+    <?php part('auth-buttons', ['class' => 'header-actions', 'compact' => true]) ?>
   </div>
 </header>

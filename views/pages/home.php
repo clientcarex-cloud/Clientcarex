@@ -3,32 +3,33 @@
     <div class="trust-pill">
       <img src="<?= asset('assets/img/users-1.webp') ?>" alt="" width="120" height="32">
       <span class="trust-pill__text">
-        <strong class="trust-pill__title">Trusted by 2,000+ users</strong>
-        <span class="trust-pill__sub">Satisfied clients globally</span>
+        <strong class="trust-pill__title">Performance marketing &amp; business automation</strong>
+        <span class="trust-pill__sub">Growth funded by us, paid for out of results</span>
       </span>
     </div>
 
-    <h1>Automate Your Business &amp; Scale Fast, AI &amp; Data Driven ERP</h1>
+    <h1>We generate the revenue. You pay us a share of it.</h1>
 
     <p class="hero__lede">
-      From leads to customer satisfaction, workflow automation and all your
-      business operations in one place — designed to streamline operations and
-      enhance productivity.
+      No setup fee, no retainer, no ad budget out of your pocket. We fund the
+      ad spend, the media buyers, the creative and the tools — and charge
+      <?= SHARE_RANGE ?> of the revenue we actually generate. Then we automate
+      the operations behind it so growth doesn't break the business.
     </p>
 
     <?php part('buttons', ['items' => [
-        ['Request A Demo', 'contact', 'btn--lg'],
-        ['Explore More', 'features', 'btn--ghost btn--lg'],
+        ['Get a free growth audit', 'contact', 'btn--lg'],
+        ['See how pricing works', 'pricing', 'btn--ghost btn--lg'],
     ]]) ?>
 
-    <p class="hero__note"><?= icon('shield', 16) ?>30-day money back guarantee</p>
+    <p class="hero__note"><?= icon('shield', 16) ?>₹0 setup · ₹0 retainer · we fund the ad spend</p>
   </div>
 </section>
 
 <section class="section section--tight logo-cloud">
   <div class="container">
     <h2 class="logo-cloud__title" data-reveal>
-      Trusted by 100+ Teams — They Grew Fast. You Can Too.
+      Brands that trusted us to run their growth
     </h2>
     <div class="logo-cloud__grid" data-reveal>
       <?php foreach (CLIENT_LOGOS as [$file, $alt, $w, $h]): ?>
@@ -38,39 +39,78 @@
   </div>
 </section>
 
-<section class="section section--paper">
+<section class="section section--paper" id="services">
   <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'Two engines',
+        'title'   => 'One agency, two ways to be paid',
+        'lede'    => 'Marketing is charged against the revenue it produces. Automation is charged against the scope it takes to build. Nothing in between.',
+    ]) ?>
+
     <?php
     part('split', [
         'img'     => 'saas-ai.svg',
-        'alt'     => 'AI-driven marketing dashboard',
-        'eyebrow' => 'Automation',
-        'title'   => 'Discover AI-driven marketing tools',
-        'body'    => 'Eliminate repetitive customer service tasks with easy-to-configure automation, boosting efficiency across every team.',
-        'list'    => ['Eliminate repetition', 'Boost efficiency'],
-        'button'  => ['View Pricing', 'pricing'],
+        'alt'     => 'Performance marketing dashboard',
+        'eyebrow' => 'Engine one · Revenue share',
+        'title'   => 'Performance Marketing',
+        'body'    => 'We take over paid media, creative, funnels and lifecycle — and we pay for all of it. Ad spend, manpower, subscriptions, assets: every expense sits on our side of the ledger. You pay ' . SHARE_RANGE . ' of the revenue we generate, and nothing at all if we generate none.',
+        'list'    => [
+            'Zero setup fee, zero monthly retainer',
+            'Ad spend, team, creative and tools funded by us',
+            'Charged only against tracked, realised revenue',
+        ],
+        'button'  => ['How the revenue share works', 'performance-marketing'],
     ]);
 
     part('split', [
         'flip'    => true,
         'img'     => 'saas-afi.svg',
-        'alt'     => 'Sharing tools with a team',
-        'eyebrow' => 'Collaboration',
-        'title'   => 'Share tools quickly and confidently in minutes',
-        'body'    => 'This powerful toolset removes the need to leave your CRM to get things done — build a custom proposal with dynamic pricing tables, then customise your own dynamic versions.',
-        'list'    => ['Eliminate repetition', 'Boost efficiency'],
-        'button'  => ['View Pricing', 'pricing'],
+        'alt'     => 'Automated workflows across a business',
+        'eyebrow' => 'Engine two · Scoped build',
+        'title'   => 'Business Automation',
+        'body'    => 'Leads, follow-up, billing, approvals, HR, support and reporting — mapped, built and handed over. We discover your processes, write the scope, and quote a fixed price against it. No per-seat licence, no open-ended hourly bill.',
+        'list'    => [
+            'Free discovery and a written workflow map',
+            'Fixed quote against an agreed scope document',
+            'Built on your data, reviewed piece by piece',
+        ],
+        'button'  => ['How scoping works', 'business-automation'],
     ]);
     ?>
+  </div>
+</section>
+
+<section class="section" id="what-we-fund">
+  <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'The ledger',
+        'title'   => 'Every cost that normally lands on you, lands on us',
+        'lede'    => "This is the whole difference. Most agencies bill you a retainer and then spend your money. We spend ours, and only bill once it has turned into your revenue.",
+    ]) ?>
+
+    <?php part('ledger', ['cols' => [
+        ['ours', 'On us', 'Funded by ClientcareX, included in the revenue share at no extra cost.', LEDGER_OURS],
+        ['yours', 'On you', "The short list — and the last line is the only invoice you'll get.", LEDGER_YOURS],
+    ]]) ?>
+  </div>
+</section>
+
+<section class="section section--dark">
+  <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'What it costs to start',
+        'title'   => 'The numbers before you have made a rupee',
+    ]) ?>
+    <?php part('stats', ['items' => STATS_MODEL]) ?>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
     <?php part('section-head', [
-        'eyebrow' => 'Why Choose Us',
-        'title'   => 'Built to fit the way your team already works',
-        'lede'    => 'Three capabilities that do most of the heavy lifting on day one.',
+        'eyebrow' => 'Why it works',
+        'title'   => 'A pricing model that can only pay us if it paid you first',
+        'lede'    => 'Three things change the moment the agency carries the cost instead of the client.',
     ]) ?>
 
     <div class="grid grid--3" data-reveal>
@@ -85,42 +125,76 @@
   </div>
 </section>
 
-<?php part('riskfree', ['buttons' => [
-    ['Start Free Trial', 'contact', 'btn--lime btn--lg'],
-    ['See how it works', 'how-it-works', 'btn--ghost btn--lg'],
-]]) ?>
-
-<section class="section" id="integrations">
+<section class="section section--paper" id="channels">
   <div class="container">
     <?php part('section-head', [
-        'eyebrow' => 'Integrations',
-        'title'   => 'Boost your efficiency with integrations',
-        'lede'    => 'Connect every part of your business with integrations that simplify your workflow.',
+        'eyebrow' => 'Performance marketing',
+        'title'   => 'What we run, on our budget',
+        'lede'    => 'Channel mix is decided by what pays back, not by what you bought last year.',
     ]) ?>
+    <?php part('service-grid', ['items' => MARKETING_SERVICES]) ?>
+    <?php part('buttons', [
+        'items' => [['See the full marketing model', 'performance-marketing', 'btn--ghost']],
+        'class' => 'btn-row btn-row--center',
+        'style' => 'margin-top:2.5rem',
+    ]) ?>
+  </div>
+</section>
 
-    <div class="grid grid--3" data-reveal>
-      <?php foreach (INTEGRATIONS as [$name, $tag, $logo, $body]): ?>
-        <article class="card integration">
-          <div class="integration__head">
-            <span class="integration__logo"><img src="<?= asset('assets/img/' . $logo) ?>" alt="" width="26" height="26" loading="lazy"></span>
-            <h3><?= e($name) ?><span class="integration__tag"><?= e($tag) ?></span></h3>
-          </div>
-          <p><?= e($body) ?></p>
-          <?php part('link-arrow', ['label' => 'Learn More', 'href' => 'contact']) ?>
-        </article>
-      <?php endforeach ?>
-    </div>
+<?php part('promise', ['buttons' => [
+    ['Get a free growth audit', 'contact', 'btn--lime btn--lg'],
+    ['See how an engagement runs', 'how-it-works', 'btn--ghost btn--lg'],
+]]) ?>
+
+<section class="section" id="automation">
+  <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'Business automation',
+        'title'   => 'What we build, priced on scope',
+        'lede'    => 'Growth exposes every manual process you were tolerating. These are the ones we take off your team first.',
+    ]) ?>
+    <?php part('service-grid', ['items' => AUTOMATION_SERVICES]) ?>
+    <?php part('buttons', [
+        'items' => [['See how automation is scoped', 'business-automation', 'btn--ghost']],
+        'class' => 'btn-row btn-row--center',
+        'style' => 'margin-top:2.5rem',
+    ]) ?>
+  </div>
+</section>
+
+<section class="section section--paper" id="how">
+  <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'How it works',
+        'title'   => 'Four steps, and the first two are free',
+        'lede'    => 'Nothing is signed until the model, the rate and the scope are all on paper.',
+    ]) ?>
+    <?php part('steps', ['items' => STEPS_ENGAGEMENT]) ?>
+  </div>
+</section>
+
+<section class="section" id="fit">
+  <div class="container">
+    <?php part('section-head', [
+        'eyebrow' => 'Honest fit',
+        'title'   => "We turn work down, and here's when",
+        'lede'    => 'Because we fund the campaign first, we can only take on businesses the model actually works for. Better to find that out in the audit than three months in.',
+    ]) ?>
+    <?php part('ledger', ['cols' => [
+        ['ours', 'A good fit', null, FIT_YES],
+        ['no', 'Not a fit — yet', null, FIT_NO],
+    ]]) ?>
   </div>
 </section>
 
 <section class="section section--paper" id="pricing">
   <div class="container">
     <?php part('section-head', [
-        'eyebrow' => 'Pricing plans',
-        'title'   => 'Find the right package',
-        'lede'    => "It's Now or Never ⚡ — unlock enterprise power 💼 and transform your business before time runs out 🕒",
+        'eyebrow' => 'Pricing',
+        'title'   => 'Pick the engine, or take both',
+        'lede'    => 'Two commercial models, written plainly. The rate and the scope are always fixed in writing before work starts.',
     ]) ?>
-    <?php part('plans') ?>
+    <?php part('models') ?>
   </div>
 </section>
 
@@ -128,8 +202,8 @@
   <div class="container">
     <?php part('section-head', [
         'eyebrow' => 'Reviews',
-        'title'   => 'What Our Customers Say',
-        'lede'    => 'Witness firsthand the appreciation for our uncomplicated ticketing system in everyday work.',
+        'title'   => 'What our clients say',
+        'lede'    => 'From the owners who let us put our own money behind their growth.',
     ]) ?>
 
     <div class="grid grid--4" data-reveal>
@@ -154,12 +228,12 @@
   <div class="container">
     <?php part('section-head', [
         'eyebrow' => 'FAQs',
-        'title'   => 'Frequently asked questions',
-        'lede'    => "Got questions? Whether you're scaling, streamlining or starting your 90-Day Business Transformation, here's where the doubts disappear.",
+        'title'   => 'The questions everyone asks about revenue share',
+        'lede'    => 'How the percentage is set, how revenue is proven, what happens to refunds — and what automation costs.',
     ]) ?>
     <?php part('faq') ?>
     <?php part('buttons', [
-        'items' => [['View All Questions', 'contact', 'btn--ghost']],
+        'items' => [['Ask us something else', 'contact', 'btn--ghost']],
         'class' => 'btn-row btn-row--center',
         'style' => 'margin-top:2rem',
     ]) ?>
@@ -171,14 +245,15 @@
     <?php part('contact-strip', ['style' => 'margin-bottom:clamp(2.5rem,5vw,4rem)']) ?>
 
     <div class="cta" data-reveal>
-      <h2>From professional business to enterprise — let's scale 10x growth</h2>
+      <h2>Find out what we'd be willing to fund</h2>
       <p>
-        Tell us where the manual work is. We'll show you exactly what
-        <?= SITE_NAME ?> automates, and what it saves you, in the first 90 days.
+        Tell us what you sell and what it costs you to deliver. The audit comes
+        back with the share rate we'd propose, the channels we'd run, and a
+        straight answer on whether <?= SITE_NAME ?> should take this on at all.
       </p>
       <?php part('buttons', ['items' => [
-          ['Request A Demo', 'contact', 'btn--lime btn--lg'],
-          ['See Pricing', 'pricing', 'btn--ghost btn--lg'],
+          ['Get a free growth audit', 'contact', 'btn--lime btn--lg'],
+          ['See pricing', 'pricing', 'btn--ghost btn--lg'],
       ], 'class' => 'btn-row btn-row--center']) ?>
     </div>
   </div>

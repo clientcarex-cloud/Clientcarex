@@ -46,11 +46,17 @@ $route = request_route();
 /* ---- Redirects: keep the old static URLs working ---------------------- */
 if (str_ends_with($route, '.html')) {
     $legacy = substr($route, 0, -5);
-    $target = $legacy === 'index' ? '' : $legacy;
-    if (isset(PAGES[$target])) {
-        header('Location: ' . url($target), true, 301);
+    $route  = $legacy === 'index' ? '' : $legacy;
+    if (isset(PAGES[$route]) || isset(REDIRECTS[$route])) {
+        header('Location: ' . url(REDIRECTS[$route] ?? $route), true, 301);
         exit;
     }
+}
+
+// Routes retired when the business model changed — send them to their successor.
+if (isset(REDIRECTS[$route])) {
+    header('Location: ' . url(REDIRECTS[$route]), true, 301);
+    exit;
 }
 if ($route !== '' && str_ends_with((string) strtok($_SERVER['REQUEST_URI'] ?? '', '?'), '/')) {
     header('Location: ' . url($route), true, 301);
@@ -79,7 +85,7 @@ if ($page === null) {
     $page  = PAGES['404'];
 }
 
-/* ---- Demo request ----------------------------------------------------- */
+/* ---- Growth-audit enquiry -------------------------------------------- */
 $form = ['errors' => [], 'values' => [], 'sent' => isset($_GET['sent'])];
 if ($route === 'contact') {
     require ROOT . '/app/enquiry.php';

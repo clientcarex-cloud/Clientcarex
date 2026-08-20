@@ -10,9 +10,9 @@ part('page-hero', [
 ]);
 
 $routes = [
-    ['Features', 'Every module in the platform, from leads and CRM through to AI reporting.', 'Browse features', 'features'],
-    ['Pricing', 'Professional, Business and Enterprise plans with transparent per-user pricing.', 'See pricing', 'pricing'],
-    ['90-Day Challenge', 'Our transformation programme, and what happens across the 13 weeks.', 'See the programme', 'challenge'],
+    ['Performance Marketing', 'We fund the ads, the team and the creative, and charge ' . SHARE_RANGE . ' of the revenue we generate.', 'See the model', 'performance-marketing'],
+    ['Business Automation', 'Processes mapped, scoped and built for one fixed price — no per-seat licence.', 'See how scoping works', 'business-automation'],
+    ['Pricing', 'Both commercial models side by side, with what each one already covers.', 'Compare models', 'pricing'],
 ];
 ?>
 <section class="section">

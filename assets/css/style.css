@@ -1,7 +1,7 @@
 /* ==========================================================================
    ClientcareX — design system
-   Palette, type scale and components recovered from the original
-   WordPress/Elementor build (archived 2025-07-29).
+   Palette and type scale carried over from the original brand; components
+   rebuilt for the performance-marketing and business-automation site.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -401,7 +401,7 @@ ul, ol { margin: 0; padding: 0; }
 .nav-toggle[aria-expanded="true"] .nav-toggle__bar::before { transform: translateY(6px) rotate(45deg); }
 .nav-toggle[aria-expanded="true"] .nav-toggle__bar::after { transform: translateY(-6px) rotate(-45deg); }
 
-@media (max-width: 1020px) {
+@media (max-width: 1119px) {
   .nav-toggle { display: inline-flex; }
   .nav {
     position: fixed;
@@ -426,7 +426,7 @@ ul, ol { margin: 0; padding: 0; }
   }
   .nav__actions .btn { flex: 1; }
 }
-@media (min-width: 1021px) {
+@media (min-width: 1120px) {
   .nav__actions { display: none; }
 }
 
@@ -574,7 +574,14 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: var(--radius);
 }
 .card__icon img { width: 30px; height: 30px; }
-.card h3 { margin-bottom: .5rem; }
+.card__icon svg { color: var(--brand-700); }
+.card h3 {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  margin-bottom: .5rem;
+}
+.card h3 svg { flex: none; color: var(--brand-700); }
 .card p { color: var(--muted); font-size: .9375rem; margin: 0; }
 
 /* --------------------------------------------------------------------------
@@ -703,12 +710,7 @@ ul, ol { margin: 0; padding: 0; }
 }
 .plan__name { font-size: 1.375rem; margin-bottom: .25rem; }
 .plan__tagline { font-size: .875rem; color: var(--ink-400); margin-bottom: 1.25rem; }
-.plan__price {
-  display: flex;
-  align-items: baseline;
-  gap: .35rem;
-  margin-bottom: .75rem;
-}
+.plan__price { margin: 0 0 .2rem; }
 .plan__amount {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 4vw, 2.75rem);
@@ -716,7 +718,13 @@ ul, ol { margin: 0; padding: 0; }
   letter-spacing: -.03em;
   line-height: 1;
 }
-.plan__period { font-size: .875rem; color: var(--ink-400); }
+/* "Scope-based" needs to sit smaller than "20–30%" to stay on one line. */
+.plan__amount--word { font-size: clamp(1.625rem, 2.8vw, 2rem); }
+.plan__period {
+  font-size: .875rem;
+  color: var(--ink-400);
+  margin-bottom: .9rem;
+}
 .plan__summary {
   font-size: .9375rem;
   color: var(--muted);
@@ -741,6 +749,53 @@ ul, ol { margin: 0; padding: 0; }
   color: var(--ink-400);
   text-align: center;
 }
+.plan__link { margin-top: .625rem; text-align: center; }
+.plan__link .link-arrow { font-size: .8125rem; }
+
+/* --------------------------------------------------------------------------
+   13b. Ledger — what we carry vs what you carry
+   -------------------------------------------------------------------------- */
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  gap: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+.ledger__col {
+  height: 100%;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+/* The column carrying our costs is the point of the section, so it leads. */
+.ledger__col--ours {
+  background: var(--mint-50);
+  border-color: rgba(6, 88, 69, .2);
+  box-shadow: var(--shadow);
+}
+.ledger__col--no { background: var(--paper); }
+.ledger__col h3 { font-size: 1.25rem; margin-bottom: .4rem; }
+.ledger__lede { color: var(--muted); font-size: .9375rem; margin-bottom: 1.5rem; }
+.ledger__col ul {
+  list-style: none;
+  display: grid;
+  gap: .8rem;
+  font-size: .9375rem;
+  color: var(--ink-700);
+}
+.ledger__col h3 + ul { margin-top: 1.375rem; }
+.ledger__col li { display: flex; align-items: flex-start; gap: .7rem; }
+.ledger__mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  margin-top: 1px;
+  border-radius: var(--radius-pill);
+}
+.ledger__col--ours .ledger__mark { background: var(--brand-700); color: var(--white); }
+.ledger__col--yours .ledger__mark { background: var(--mint-50); color: var(--brand-700); }
+.ledger__col--no .ledger__mark { background: #fdecea; color: #b03327; }
 
 /* --------------------------------------------------------------------------
    14. Reviews

@@ -1,12 +1,19 @@
-<?php /** @var array $buttons */ ?>
+<?php
+/**
+ * Dark band: the one-line version of why the model is different, beside a
+ * client pull quote.
+ * @var array       $buttons
+ * @var string|null $title
+ * @var string|null $body
+ */
+?>
 <section class="section section--dark">
   <div class="container riskfree">
     <div data-reveal>
-      <span class="eyebrow">Risk-free</span>
-      <h2>Try It Now Risk-Free</h2>
+      <span class="eyebrow">The model</span>
+      <h2><?= e($title ?? 'If it does not produce revenue, it does not produce an invoice') ?></h2>
       <p>
-        Discover how <?= SITE_NAME ?> can enhance your support team's efficiency,
-        improve customer satisfaction and take your business to the next level.
+        <?= e($body ?? 'We pay for the ads, the media buyers, the creative and the tools before you pay us anything. Our fee only exists once your revenue does — so there is no version of this where we get paid for activity that did not work.') ?>
       </p>
       <?php part('buttons', ['items' => $buttons, 'style' => 'margin-top:1.75rem']) ?>
     </div>

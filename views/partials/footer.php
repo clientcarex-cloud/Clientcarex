@@ -4,9 +4,10 @@
       <div class="footer__brand">
         <img src="<?= asset('assets/img/ClientcareX-Logo.png') ?>" alt="<?= SITE_NAME ?>" width="500" height="100">
         <p>
-          AI driven ERP and business automation for teams that want to grow
-          without adding headcount. From leads to customer satisfaction,
-          every workflow in one place.
+          A performance marketing and business automation agency. We fund and run
+          the growth — ad spend, team, creative and tools — and charge a share of
+          the revenue it generates. Automation is scoped, quoted and built to fit
+          how your business actually runs.
         </p>
         <div class="social">
           <?php foreach (SOCIAL as [$name, $label, $href]): ?>
