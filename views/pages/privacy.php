@@ -1,7 +1,7 @@
 <?php part('page-hero', [
     'crumb' => 'Privacy Policy',
     'title' => 'Privacy Policy',
-    'lede'  => 'How Clientcarex Private Limited collects, uses and protects your data.',
+    'lede'  => 'How Clientcarex AI Private Limited collects, uses and protects your data.',
 ]) ?>
 
 <section class="section">

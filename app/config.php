@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 const SITE_NAME  = 'ClientcareX';
 const SITE_URL   = 'https://clientcarex.com';
-const COMPANY    = 'Clientcarex Private Limited';
+const COMPANY    = 'Clientcarex AI Private Limited';
 const PHONE      = '+91 93908 93024';
 const PHONE_HREF = '+919390893024';
 const EMAIL      = 'care@clientcarex.com';
@@ -88,7 +88,7 @@ const PAGES = [
         'view'  => 'privacy',
         'nav'   => '',
         'title' => 'Privacy Policy — ClientcareX',
-        'description' => 'How Clientcarex Private Limited collects, uses and protects your data.',
+        'description' => 'How Clientcarex AI Private Limited collects, uses and protects your data.',
     ],
     'terms' => [
         'view'  => 'terms',
