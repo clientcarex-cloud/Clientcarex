@@ -142,12 +142,33 @@ function enquiry_json(array $result): never
 }
 
 /**
- * Deliver an enquiry through the server's own mail server — no mailbox login.
+ * SMTP login for the site's mailbox, kept in storage/mail.php (git-ignored,
+ * web-denied) so the password never lands in the repository:
  *
- * First choice is SMTP to the local MTA (Exim/Postfix on localhost:25): it
- * answers every step, so a rejected sender or recipient comes back as a real
- * error right away instead of vanishing after mail() has already said "OK".
- * If nothing listens on localhost, PHP mail() is used as before.
+ *   <?php return [
+ *       'host' => 'smtp.hostinger.com',
+ *       'port' => 465,
+ *       'user' => 'care@clientcarex.com',
+ *       'pass' => '…',
+ *   ];
+ *
+ * Returns null when the file is absent or incomplete.
+ */
+function smtp_config(): ?array
+{
+    $file = ROOT . '/storage/mail.php';
+    $cfg  = is_file($file) ? require $file : null;
+
+    return is_array($cfg) && !empty($cfg['user']) && !empty($cfg['pass']) ? $cfg : null;
+}
+
+/**
+ * Deliver an enquiry by logging in to the domain's own mailbox over SMTP, so
+ * the message leaves through the mail provider that SPF/DKIM vouch for.
+ *
+ * Every SMTP step is answered by the provider, so a bad login, a blocked port
+ * or a rejected recipient comes back as a real error right away. Without
+ * storage/mail.php the local mail server (localhost:25) is used instead.
  * Any failure reason is written to $error, for the visitor and the log.
  */
 function send_enquiry_mail(array $values, string &$error = ''): bool
@@ -156,43 +177,41 @@ function send_enquiry_mail(array $values, string &$error = ''): bool
     require_once ROOT . '/app/PHPMailer/PHPMailer.php';
     require_once ROOT . '/app/PHPMailer/SMTP.php';
 
-    $mail = build_enquiry_mail($values);
+    $smtp = smtp_config();
+    $mail = build_enquiry_mail($values, $smtp['user'] ?? MAIL_FROM);
     $transcript = '';
 
     try {
         $mail->isSMTP();
-        $mail->Host        = 'localhost';
-        $mail->Port        = 25;
-        $mail->SMTPAuth    = false;
-        $mail->SMTPAutoTLS = false; // local hop; a self-signed cert must not break it
-        $mail->Timeout     = 10;
+        $mail->Timeout     = 15;
         $mail->SMTPDebug   = PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;
         $mail->Debugoutput = static function (string $line) use (&$transcript): void {
             $transcript .= $line;
         };
 
+        if ($smtp) {
+            $port = (int) ($smtp['port'] ?? 465);
+            $mail->Host       = (string) ($smtp['host'] ?? 'smtp.hostinger.com');
+            $mail->Port       = $port;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = (string) $smtp['user'];
+            $mail->Password   = (string) $smtp['pass'];
+            $mail->SMTPSecure = $port === 465
+                ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $mail->Host        = 'localhost';
+            $mail->Port        = 25;
+            $mail->SMTPAuth    = false;
+            $mail->SMTPAutoTLS = false; // local hop; a self-signed cert must not break it
+        }
+
         return $mail->send();
     } catch (PHPMailer\PHPMailer\Exception $e) {
-        $smtpError = smtp_reply($transcript) ?: ($mail->ErrorInfo ?: $e->getMessage());
+        $error = smtp_reply($transcript) ?: ($mail->ErrorInfo ?: $e->getMessage());
+
+        return false;
     }
-
-    // No local SMTP listener: fall back to PHP mail(), which only reports hand-off.
-    if (!str_contains($transcript, 'SERVER -> CLIENT')) {
-        try {
-            $mail = build_enquiry_mail($values);
-            $mail->isMail();
-
-            return $mail->send();
-        } catch (PHPMailer\PHPMailer\Exception $e) {
-            $error = 'mail(): ' . ($mail->ErrorInfo ?: $e->getMessage());
-
-            return false;
-        }
-    }
-
-    $error = $smtpError;
-
-    return false;
 }
 
 /** The mail server's own rejection line(s), e.g. "550 Unrouteable address". */
@@ -203,12 +222,13 @@ function smtp_reply(string $transcript): string
     return trim(implode(' ', array_unique($m[1] ?? [])));
 }
 
-function build_enquiry_mail(array $values): PHPMailer\PHPMailer\PHPMailer
+function build_enquiry_mail(array $values, string $from): PHPMailer\PHPMailer\PHPMailer
 {
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     $mail->CharSet = 'UTF-8';
-    $mail->setFrom(MAIL_FROM, SITE_NAME . ' Website');
-    $mail->Sender = MAIL_FROM;
+    // The provider only relays mail sent as the mailbox that logged in.
+    $mail->setFrom($from, SITE_NAME . ' Website');
+    $mail->Sender = $from;
     $mail->addReplyTo($values['email'], $values['name']);
     foreach (MAIL_TO as $to) {
         $mail->addAddress($to);
