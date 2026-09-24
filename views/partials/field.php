@@ -9,7 +9,5 @@
   <label for="<?= $id ?>"><?= e($label) ?></label>
   <input type="<?= $type ?>" id="<?= $id ?>" name="<?= $id ?>" autocomplete="<?= $auto ?>"
          value="<?= $value ?>"<?= $req ? ' required' : '' ?><?= isset($errors[$id]) ? ' aria-invalid="true"' : '' ?>>
-  <?php if (isset($errors[$id])): ?>
-    <span class="field__hint" role="alert"><?= e($errors[$id]) ?></span>
-  <?php endif ?>
+  <span class="field__hint" role="alert" data-error-for="<?= $id ?>"<?= isset($errors[$id]) ? '' : ' hidden' ?>><?= e($errors[$id] ?? '') ?></span>
 </div>

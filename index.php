@@ -86,11 +86,15 @@ if ($page === null) {
 }
 
 /* ---- Growth-audit enquiry -------------------------------------------- */
-$form = ['errors' => [], 'values' => [], 'sent' => isset($_GET['sent'])];
+$form = ['errors' => [], 'values' => [], 'sent' => false];
 if ($route === 'contact') {
     require ROOT . '/app/enquiry.php';
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $form = handle_enquiry() + $form;
+        $form = handle_enquiry();
+        // main.js submits in the background; a browser without JS gets the page.
+        if (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch') {
+            enquiry_json($form);
+        }
     }
 }
 

@@ -42,14 +42,14 @@ part('page-hero', [
         </p>
       </div>
 
-      <form class="form" method="post" action="<?= url('contact') ?>" data-reveal>
-        <?php if ($form['sent']): ?>
-          <p class="field__hint" role="status" style="margin-bottom:1rem">
-            Thanks — your request is with the team. We'll come back to you within one working day.
-          </p>
-        <?php elseif (isset($errors['form'])): ?>
-          <p class="field__hint" role="alert" style="margin-bottom:1rem"><?= e($errors['form']) ?></p>
-        <?php endif ?>
+      <div data-reveal>
+      <div class="form form--done" id="enquiry-done" role="status"<?= $form['sent'] ? '' : ' hidden' ?>>
+        <h3>Thank you — request received</h3>
+        <p>Your request is with the team. We'll come back to you within one working day.</p>
+      </div>
+
+      <form class="form" id="enquiry" method="post" action="<?= url('contact') ?>" novalidate<?= $form['sent'] ? ' hidden' : '' ?>>
+        <p class="form__status" id="enquiry-status" role="alert"<?= isset($errors['form']) ? '' : ' hidden' ?>><?= e($errors['form'] ?? '') ?></p>
 
         <div class="form__row">
           <?php foreach (array_slice($fields, 0, 2) as [$id, $label, $type, $auto, $req]): ?>
@@ -94,6 +94,7 @@ part('page-hero', [
 
         <button class="btn btn--lg btn--block" type="submit">Get my free growth audit</button>
       </form>
+      </div>
     </div>
   </div>
 </section>

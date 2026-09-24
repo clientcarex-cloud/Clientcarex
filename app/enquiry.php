@@ -70,7 +70,7 @@ function header_safe(string $v): string
 /**
  * Validate and deliver a submission.
  *
- * @return array{errors: array<string,string>, values: array<string,string>}
+ * @return array{errors: array<string,string>, values: array<string,string>, sent: bool}
  */
 function handle_enquiry(): array
 {
@@ -88,7 +88,7 @@ function handle_enquiry(): array
 
     // Honeypot: a real browser never fills a hidden field.
     if (($_POST['website'] ?? '') !== '') {
-        redirect(url('contact') . '?sent=1');
+        return ['errors' => [], 'values' => [], 'sent' => true];
     }
 
     $errors = [];
@@ -106,13 +106,33 @@ function handle_enquiry(): array
     }
 
     if ($errors) {
-        return ['errors' => $errors, 'values' => $values];
+        return ['errors' => $errors, 'values' => $values, 'sent' => false];
     }
 
     $mailed = send_enquiry_mail($values);
-
     log_enquiry($values, $mailed);
-    redirect(url('contact') . '?sent=1');
+
+    if (!$mailed) {
+        $errors['form'] = 'We could not send your request just now. Please try again, or email us at ' . EMAIL . '.';
+    }
+
+    return ['errors' => $errors, 'values' => $mailed ? [] : $values, 'sent' => $mailed, 'mail_failed' => !$mailed];
+}
+
+/** Answer a background (fetch) submission with JSON instead of a page. */
+function enquiry_json(array $result): never
+{
+    http_response_code($result['sent'] ? 200 : (!empty($result['mail_failed']) ? 500 : 422));
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store');
+    echo json_encode([
+        'ok'      => $result['sent'],
+        'message' => $result['sent']
+            ? "Thanks — your request is with the team. We'll come back to you within one working day."
+            : ($result['errors']['form'] ?? 'Please check the highlighted fields.'),
+        'errors'  => $result['errors'],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
 }
 
 /**
@@ -254,10 +274,4 @@ function enquiry_mail_html(array $values): string
 </body>
 </html>
 HTML;
-}
-
-function redirect(string $to, int $status = 303): never
-{
-    header('Location: ' . $to, true, $status);
-    exit;
 }
