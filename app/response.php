@@ -31,7 +31,8 @@ function app_version(): string
         }
     }
 
-    return $version = substr(sha1($newest . '|' . date('Y')), 0, 10);
+    // BASE is part of every link, so pages rendered under another prefix never mix.
+    return $version = substr(sha1($newest . '|' . date('Y') . '|' . BASE), 0, 10);
 }
 
 /** Cache filename stem for a route, without the version or ETag suffix. */

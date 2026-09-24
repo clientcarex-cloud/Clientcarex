@@ -30,7 +30,8 @@ function asset(string $path): string
     $file = ROOT . '/' . $path;
     $v    = is_file($file) ? filemtime($file) : 0;
 
-    return BASE . '/' . $path . '?v=' . $v;
+    // Assets keep the real folder: the CRM root has its own /assets/css/style.css.
+    return ASSET_BASE . '/' . $path . '?v=' . $v;
 }
 
 /** Render a template file to a string. */

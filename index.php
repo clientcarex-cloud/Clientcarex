@@ -17,10 +17,17 @@ if (PHP_SAPI === 'cli-server') {
 }
 
 define('ROOT', __DIR__);
-// Install directory, so the site also runs from a sub-folder.
-define('BASE', PHP_SAPI === 'cli-server'
+// Folder the site is installed in, e.g. /homepage inside the CRM.
+define('ASSET_BASE', PHP_SAPI === 'cli-server'
     ? ''
     : rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/'));
+// Prefix for page links. The CRM's .htaccess rewrites clean URLs (/contact)
+// into the folder, so the folder only belongs in links when the visitor
+// actually requested it; otherwise links would leak /homepage/….
+define('BASE', ASSET_BASE !== ''
+    && str_starts_with((string) strtok($_SERVER['REQUEST_URI'] ?? '/', '?') . '/', ASSET_BASE . '/')
+    ? ASSET_BASE
+    : '');
 
 ini_set('zlib.output_compression', '0'); // we compress once, at cache-write time
 
