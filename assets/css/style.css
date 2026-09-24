@@ -123,6 +123,9 @@ ul, ol { margin: 0; padding: 0; }
   border-radius: 4px;
 }
 
+/* `hidden` must win over component display rules such as .form { display: grid }. */
+[hidden] { display: none !important; }
+
 .visually-hidden {
   position: absolute;
   width: 1px; height: 1px;

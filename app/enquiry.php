@@ -50,13 +50,17 @@ function csrf_valid(string $token): bool
 }
 
 /** One-line-per-enquiry JSON log, so no request is dropped. */
-function log_enquiry(array $data, bool $mailed): void
+function log_enquiry(array $data, bool $mailed, string $mailError = ''): void
 {
     $file = ROOT . '/storage/enquiries.log';
     @mkdir(dirname($file), 0775, true);
+    $entry = $data + ['mailed' => $mailed, 'at' => date('c')];
+    if ($mailError !== '') {
+        $entry['mail_error'] = $mailError;
+    }
     file_put_contents(
         $file,
-        json_encode($data + ['mailed' => $mailed, 'at' => date('c')], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
+        json_encode($entry, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n",
         FILE_APPEND | LOCK_EX
     );
 }
@@ -109,8 +113,9 @@ function handle_enquiry(): array
         return ['errors' => $errors, 'values' => $values, 'sent' => false];
     }
 
-    $mailed = send_enquiry_mail($values);
-    log_enquiry($values, $mailed);
+    $mailError = '';
+    $mailed    = send_enquiry_mail($values, $mailError);
+    log_enquiry($values, $mailed, $mailError);
 
     if (!$mailed) {
         $errors['form'] = 'We could not send your request just now. Please try again, or email us at ' . EMAIL . '.';
@@ -136,21 +141,54 @@ function enquiry_json(array $result): never
 }
 
 /**
- * Deliver an enquiry through the host's own mail transport — no SMTP login.
- * PHPMailer in isMail() mode sets a same-domain From and an explicit envelope
- * sender (Return-Path), which shared hosts need before they will relay it.
+ * SMTP login for the site's mailbox, kept in storage/mail.php (git-ignored,
+ * web-denied) so the password never lands in the repository:
+ *
+ *   <?php return ['host' => 'smtp.hostinger.com', 'port' => 465,
+ *                 'user' => 'care@clientcarex.com', 'pass' => '…'];
+ *
+ * Returns null when the file is absent, and mail falls back to PHP mail().
  */
-function send_enquiry_mail(array $values): bool
+function smtp_config(): ?array
+{
+    $file = ROOT . '/storage/mail.php';
+    $cfg  = is_file($file) ? require $file : null;
+
+    return is_array($cfg) && !empty($cfg['user']) && !empty($cfg['pass']) ? $cfg : null;
+}
+
+/**
+ * Deliver an enquiry. Uses authenticated SMTP on the domain's own mailbox when
+ * storage/mail.php exists — mail() from the web server is not covered by the
+ * domain's SPF record, so receivers silently drop or spam-file it. PHP mail()
+ * remains the fallback. Any failure reason is written to $error for the log.
+ */
+function send_enquiry_mail(array $values, string &$error = ''): bool
 {
     require_once ROOT . '/app/PHPMailer/Exception.php';
     require_once ROOT . '/app/PHPMailer/PHPMailer.php';
+    require_once ROOT . '/app/PHPMailer/SMTP.php';
 
     $subject = 'Growth audit request — ' . $values['name']
         . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : '');
 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     try {
-        $mail->isMail();
+        if ($smtp = smtp_config()) {
+            $port = (int) ($smtp['port'] ?? 465);
+            $mail->isSMTP();
+            $mail->Host       = (string) ($smtp['host'] ?? 'smtp.hostinger.com');
+            $mail->Port       = $port;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = (string) $smtp['user'];
+            $mail->Password   = (string) $smtp['pass'];
+            $mail->SMTPSecure = $port === 465
+                ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+                : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Timeout    = 15;
+        } else {
+            $mail->isMail();
+        }
         $mail->CharSet = 'UTF-8';
         $mail->setFrom(MAIL_FROM, SITE_NAME . ' Website');
         $mail->Sender = MAIL_FROM;
@@ -165,7 +203,9 @@ function send_enquiry_mail(array $values): bool
         $mail->AltBody = enquiry_mail_text($values);
 
         return $mail->send();
-    } catch (PHPMailer\PHPMailer\Exception) {
+    } catch (PHPMailer\PHPMailer\Exception $e) {
+        $error = $mail->ErrorInfo ?: $e->getMessage();
+
         return false;
     }
 }
