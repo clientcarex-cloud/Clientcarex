@@ -118,7 +118,8 @@ function handle_enquiry(): array
     log_enquiry($values, $mailed, $mailError);
 
     if (!$mailed) {
-        $errors['form'] = 'We could not send your request just now. Please try again, or email us at ' . EMAIL . '.';
+        $errors['form'] = 'We could not send your request just now. Please try again, or email us at ' . EMAIL . '.'
+            . ($mailError !== '' ? ' (Mail server said: ' . $mailError . ')' : '');
     }
 
     return ['errors' => $errors, 'values' => $mailed ? [] : $values, 'sent' => $mailed, 'mail_failed' => !$mailed];
@@ -141,41 +142,85 @@ function enquiry_json(array $result): never
 }
 
 /**
- * Deliver an enquiry through the server's own mail transport (PHP mail() /
- * sendmail) — no mailbox login. PHPMailer sets a same-domain From and an
- * explicit envelope sender (Return-Path), which the MTA needs to relay it.
- * Any failure reason is written to $error for the log.
+ * Deliver an enquiry through the server's own mail server — no mailbox login.
+ *
+ * First choice is SMTP to the local MTA (Exim/Postfix on localhost:25): it
+ * answers every step, so a rejected sender or recipient comes back as a real
+ * error right away instead of vanishing after mail() has already said "OK".
+ * If nothing listens on localhost, PHP mail() is used as before.
+ * Any failure reason is written to $error, for the visitor and the log.
  */
 function send_enquiry_mail(array $values, string &$error = ''): bool
 {
     require_once ROOT . '/app/PHPMailer/Exception.php';
     require_once ROOT . '/app/PHPMailer/PHPMailer.php';
+    require_once ROOT . '/app/PHPMailer/SMTP.php';
 
-    $subject = 'Growth audit request — ' . $values['name']
-        . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : '');
+    $mail = build_enquiry_mail($values);
+    $transcript = '';
 
-    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     try {
-        $mail->isMail();
-        $mail->CharSet = 'UTF-8';
-        $mail->setFrom(MAIL_FROM, SITE_NAME . ' Website');
-        $mail->Sender = MAIL_FROM;
-        $mail->addReplyTo($values['email'], $values['name']);
-        foreach (MAIL_TO as $to) {
-            $mail->addAddress($to);
-        }
-
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = enquiry_mail_html($values);
-        $mail->AltBody = enquiry_mail_text($values);
+        $mail->isSMTP();
+        $mail->Host        = 'localhost';
+        $mail->Port        = 25;
+        $mail->SMTPAuth    = false;
+        $mail->SMTPAutoTLS = false; // local hop; a self-signed cert must not break it
+        $mail->Timeout     = 10;
+        $mail->SMTPDebug   = PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;
+        $mail->Debugoutput = static function (string $line) use (&$transcript): void {
+            $transcript .= $line;
+        };
 
         return $mail->send();
     } catch (PHPMailer\PHPMailer\Exception $e) {
-        $error = $mail->ErrorInfo ?: $e->getMessage();
-
-        return false;
+        $smtpError = smtp_reply($transcript) ?: ($mail->ErrorInfo ?: $e->getMessage());
     }
+
+    // No local SMTP listener: fall back to PHP mail(), which only reports hand-off.
+    if (!str_contains($transcript, 'SERVER -> CLIENT')) {
+        try {
+            $mail = build_enquiry_mail($values);
+            $mail->isMail();
+
+            return $mail->send();
+        } catch (PHPMailer\PHPMailer\Exception $e) {
+            $error = 'mail(): ' . ($mail->ErrorInfo ?: $e->getMessage());
+
+            return false;
+        }
+    }
+
+    $error = $smtpError;
+
+    return false;
+}
+
+/** The mail server's own rejection line(s), e.g. "550 Unrouteable address". */
+function smtp_reply(string $transcript): string
+{
+    preg_match_all('/SERVER -> CLIENT: ([45]\d\d[ -].*)/', $transcript, $m);
+
+    return trim(implode(' ', array_unique($m[1] ?? [])));
+}
+
+function build_enquiry_mail(array $values): PHPMailer\PHPMailer\PHPMailer
+{
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom(MAIL_FROM, SITE_NAME . ' Website');
+    $mail->Sender = MAIL_FROM;
+    $mail->addReplyTo($values['email'], $values['name']);
+    foreach (MAIL_TO as $to) {
+        $mail->addAddress($to);
+    }
+
+    $mail->isHTML(true);
+    $mail->Subject = 'Growth audit request — ' . $values['name']
+        . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : '');
+    $mail->Body    = enquiry_mail_html($values);
+    $mail->AltBody = enquiry_mail_text($values);
+
+    return $mail;
 }
 
 /** Label => value rows shown in the email, blank optional fields left out. */
