@@ -141,54 +141,22 @@ function enquiry_json(array $result): never
 }
 
 /**
- * SMTP login for the site's mailbox, kept in storage/mail.php (git-ignored,
- * web-denied) so the password never lands in the repository:
- *
- *   <?php return ['host' => 'smtp.hostinger.com', 'port' => 465,
- *                 'user' => 'care@clientcarex.com', 'pass' => '…'];
- *
- * Returns null when the file is absent, and mail falls back to PHP mail().
- */
-function smtp_config(): ?array
-{
-    $file = ROOT . '/storage/mail.php';
-    $cfg  = is_file($file) ? require $file : null;
-
-    return is_array($cfg) && !empty($cfg['user']) && !empty($cfg['pass']) ? $cfg : null;
-}
-
-/**
- * Deliver an enquiry. Uses authenticated SMTP on the domain's own mailbox when
- * storage/mail.php exists — mail() from the web server is not covered by the
- * domain's SPF record, so receivers silently drop or spam-file it. PHP mail()
- * remains the fallback. Any failure reason is written to $error for the log.
+ * Deliver an enquiry through the server's own mail transport (PHP mail() /
+ * sendmail) — no mailbox login. PHPMailer sets a same-domain From and an
+ * explicit envelope sender (Return-Path), which the MTA needs to relay it.
+ * Any failure reason is written to $error for the log.
  */
 function send_enquiry_mail(array $values, string &$error = ''): bool
 {
     require_once ROOT . '/app/PHPMailer/Exception.php';
     require_once ROOT . '/app/PHPMailer/PHPMailer.php';
-    require_once ROOT . '/app/PHPMailer/SMTP.php';
 
     $subject = 'Growth audit request — ' . $values['name']
         . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : '');
 
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     try {
-        if ($smtp = smtp_config()) {
-            $port = (int) ($smtp['port'] ?? 465);
-            $mail->isSMTP();
-            $mail->Host       = (string) ($smtp['host'] ?? 'smtp.hostinger.com');
-            $mail->Port       = $port;
-            $mail->SMTPAuth   = true;
-            $mail->Username   = (string) $smtp['user'];
-            $mail->Password   = (string) $smtp['pass'];
-            $mail->SMTPSecure = $port === 465
-                ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
-                : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Timeout    = 15;
-        } else {
-            $mail->isMail();
-        }
+        $mail->isMail();
         $mail->CharSet = 'UTF-8';
         $mail->setFrom(MAIL_FROM, SITE_NAME . ' Website');
         $mail->Sender = MAIL_FROM;
