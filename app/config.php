@@ -25,7 +25,13 @@ const SHARE_MAX   = '30%';
 const SHARE_RANGE = SHARE_MIN . '–' . SHARE_MAX;
 
 /** Where enquiries are delivered. */
-const MAIL_TO = EMAIL;
+const MAIL_TO = [EMAIL, 'digicarelynx@gmail.com'];
+
+/**
+ * Sender for form mail. It must be a mailbox on the site's own domain so the
+ * host's mail() transport accepts it and spam filters see a matching From.
+ */
+const MAIL_FROM = EMAIL;
 
 /** Full-page cache. Turn off while editing templates if you prefer. */
 const CACHE_ENABLED = true;
