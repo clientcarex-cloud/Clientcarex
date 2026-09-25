@@ -59,11 +59,11 @@ function csrf_valid(string $token): bool
 }
 
 /** One-line-per-enquiry JSON log, so no request is dropped. */
-function log_enquiry(array $data, bool $mailed, string $error = ''): void
+function log_enquiry(array $data, bool $mailed, string $error = '', string $via = ''): void
 {
     $file = ROOT . '/storage/enquiries.log';
     @mkdir(dirname($file), 0775, true);
-    $row = $data + ['mailed' => $mailed, 'at' => date('c')];
+    $row = $data + ['mailed' => $mailed, 'via' => $via, 'to' => MAIL_TO, 'at' => date('c')];
     if ($error !== '') {
         $row['mail_error'] = $error;
     }
@@ -190,8 +190,8 @@ function handle_enquiry(): array
         return ['errors' => $errors, 'values' => $values];
     }
 
-    [$mailed, $error] = deliver_enquiry($values);
-    log_enquiry($values, $mailed, $error);
+    [$mailed, $error, $via] = deliver_enquiry($values);
+    log_enquiry($values, $mailed, $error, $via);
 
     $state = $mailed ? 'sent' : 'logged';
     if (wants_json()) {
@@ -203,7 +203,7 @@ function handle_enquiry(): array
 /**
  * Email the enquiry to MAIL_TO. SMTP when configured, else PHP mail().
  *
- * @return array{0: bool, 1: string}  [delivered, error description]
+ * @return array{0: bool, 1: string, 2: string}  [delivered, error description, transport used]
  */
 function deliver_enquiry(array $values): array
 {
@@ -236,7 +236,7 @@ function deliver_enquiry(array $values): array
         foreach ($ports as $port) {
             [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, MAIL_TO, $values['email'], $subject, $body);
             if ($ok) {
-                return [true, ''];
+                return [true, '', 'smtp:' . $port];
             }
             $errors[] = 'port ' . $port . ': ' . $err;
             if (!str_starts_with($err, 'smtp connect')) {
@@ -259,13 +259,14 @@ function deliver_enquiry(array $values): array
     );
 
     if ($ok) {
-        return [true, ''];
+        // mail() only confirms the host's local queue took it, not delivery.
+        return [true, $errors ? 'smtp skipped: ' . implode(' | ', $errors) : '', 'mail()'];
     }
 
     $last     = error_get_last();
     $errors[] = 'mail(): ' . ($last['message'] ?? 'returned false');
 
-    return [false, implode(' | ', $errors)];
+    return [false, implode(' | ', $errors), 'none'];
 }
 
 /** RFC 2047 encode a header value when it carries non-ASCII characters. */
