@@ -78,6 +78,12 @@ if ($route === 'sitemap.xml' || $route === 'robots.txt') {
     exit;
 }
 
+/* ---- TEMPORARY: mail diagnostics, remove once mail is confirmed -------- */
+if ($route === 'mail-debug') {
+    require ROOT . '/app/mail-debug.php';
+    exit;
+}
+
 /* ---- Page lookup ------------------------------------------------------ */
 $page      = PAGES[$route] ?? null;
 $status    = $page === null ? 404 : 200;
