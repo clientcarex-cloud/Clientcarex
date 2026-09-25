@@ -144,32 +144,3 @@ function enquiry_email(array $values): array
 
     return ['subject' => $subject, 'text' => $text, 'html' => $html];
 }
-
-/**
- * The "it works" email the setup page sends.
- *
- * @return array{subject: string, text: string, html: string}
- */
-function setup_test_email(string $mailbox, string $to): array
-{
-    $sentAt = date('D, d M Y \a\t H:i T');
-    $text = "It works.\n\nThe website can now send email through " . $mailbox . ".\n"
-        . 'Enquiries from the contact form will arrive at ' . $to . ".\n\n"
-        . 'Sent ' . $sentAt . ' from ' . SITE_URL . "/homepage/mail-setup\n";
-
-    $inner = '<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:' . MAIL_INK . '">'
-        . 'The website can now send email through <strong>' . e($mailbox) . '</strong>. '
-        . 'Every enquiry from the contact form will arrive at <strong>' . e($to) . '</strong>, looking like this one.</p>'
-        . '<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:' . MAIL_MUTED . '">Nothing else to do. If you ever change the mailbox password, run the setup once more.</p>'
-        . mail_button(SITE_URL . '/contact', 'Open the contact form');
-
-    $html = mail_shell(
-        'The contact form can now send email.',
-        'Setup complete',
-        'Contact form email is working',
-        $inner,
-        'Sent ' . e($sentAt) . ' from the setup page.'
-    );
-
-    return ['subject' => 'Contact form email is working — ' . SITE_NAME, 'text' => $text, 'html' => $html];
-}

@@ -191,47 +191,32 @@ but not emailed", or a red error naming the field or the network problem.
 Without JavaScript the same endpoint re-renders the page with the errors, or
 redirects to `/contact?sent=1#enquiry`.
 
-### Connecting the mailbox (no file editing needed)
+### Connecting the mailbox
 
-Open **`/homepage/mail-setup`** on the live site, enter the mailbox that
-should send the email and its password, choose where enquiries are delivered,
-and press the button. The page logs in to Hostinger's SMTP, sends a test
-email, and only then writes `storage/mail.php`. A wrong password is explained
-on screen and never saved; failed attempts are rate-limited. Note the address
-stays under `/homepage/` because the root rewrite only knows the public pages.
+Copy `storage/mail.example.php` to **one** of these places and fill in the
+mailbox password (the first file found wins):
 
-Once email is connected the page answers **404** so it cannot be found or
-probed. To run it again (a new mailbox, or a changed password), create an
-empty file `storage/setup.unlock` on the server, use the page, then delete
-that file. Deleting `storage/mail.php` also re-opens it.
+1. `clientcarex-mail.php` in the folder that contains `public_html` —
+   outside the web root, so no browser can reach it. **Recommended.**
+2. `homepage/storage/mail.php` — inside the site; `.htaccess` blocks the
+   `storage/` folder from the web.
+
+Set the file's permissions to `600`. Both filenames are git-ignored. The
+`to` entry decides where enquiries are delivered; leave it empty to use the
+sending mailbox.
+
+Hostinger's hosting machines answer for `smtp.hostinger.com` with their own
+certificate, so the file sets `'insecure' => true` to skip certificate checks
+on that hop, as Hostinger's own PHPMailer guidance does. Sending to external
+addresses such as Gmail also needs the server's IP in the domain's SPF record
+(`ip4:93.127.206.4` is already in it).
+
+To confirm, send a test through `/contact`: a green "thanks" means the mail
+server accepted it; an amber warning means it did not, and
+`storage/enquiries.log` says why in `mail_error`.
 
 Enquiries arrive as a branded HTML email (`app/mail-template.php`) with a
 plain-text alternative, a details table, the message, and a reply button.
-
-Hostinger's hosting machines answer for `smtp.hostinger.com` with their own
-certificate, so the saved settings skip certificate verification on that hop
-(`'insecure' => true`), as Hostinger's own PHPMailer guidance does.
-
-### Or by hand
-
-Create `storage/mail.php` — it is git-ignored and not web-accessible:
-
-```php
-<?php return [
-    'host' => 'smtp.hostinger.com',
-    'port' => 465,                       // 465 = TLS from the start, 587 = STARTTLS
-    'user' => 'care@clientcarex.com',
-    'pass' => '…',                       // the mailbox password
-    'from' => 'care@clientcarex.com',    // a mailbox the login is allowed to send as
-    'to'   => 'care@clientcarex.com',    // optional: where enquiries go (default MAIL_TO)
-    'insecure' => true,                  // needed on Hostinger hosting, see above
-];
-```
-
-Send a test through `/contact` and check `storage/enquiries.log`: the newest
-row should say `mailed:true`. If not, `mail_error` holds the SMTP server's
-reply (a `535` is a wrong user/password; a connect error means the host
-blocks outbound SMTP on that port — try the other one).
 
 Fields captured: name, company, email, phone, `interest` (from `INTERESTS`),
 `revenue` (from `REVENUE_BANDS`) and the free-text message. The last two are
@@ -273,8 +258,8 @@ module catalogue, and the 90-Day Business Transformation Challenge.
    30-day notice period, the 5-working-day reconciliation window and the
    payment terms all appear in the legal pages and the FAQs. Change them in
    `app/config.php` and `app/content.php`, not page by page.
-4. **Confirm mail works.** Open `/homepage/mail-setup`, connect the mailbox
-   (see "The growth-audit form"), then send a test through `/contact`.
+4. **Confirm mail works.** Put the mailbox credentials in place (see "The
+   growth-audit form"), then send a test through `/contact`.
 5. **Fill in the social links.** The four footer icons are `#` placeholders in
    `SOCIAL` in `app/config.php`.
 6. **Check the client logos.** Eight are shown in the "Brands that trusted us to

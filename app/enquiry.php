@@ -264,7 +264,7 @@ function encode_header(string $value): string
         : $value;
 }
 
-/** Where enquiries are delivered: the address chosen on the setup page, else MAIL_TO. */
+/** Where enquiries are delivered: 'to' in the credentials file, else MAIL_TO. */
 function enquiry_recipient(): string
 {
     $smtp = smtp_config();
@@ -273,22 +273,34 @@ function enquiry_recipient(): string
 }
 
 /**
- * SMTP settings from storage/mail.php, which is outside version control:
+ * Where the mailbox credentials live. The first file found wins:
  *
- *   <?php return [
- *     'host'   => 'smtp.hostinger.com',
- *     'port'   => 465,             // 465 = TLS from the start, 587 = STARTTLS
- *     'user'   => 'care@clientcarex.com',
- *     'pass'   => '…',
- *     'from'   => 'care@clientcarex.com', // must be a mailbox the login may send as
- *   ];
+ *   1. clientcarex-mail.php in the folder ABOVE the web root — for the
+ *      /homepage install that is the folder containing public_html, which
+ *      no browser can ever reach;
+ *   2. storage/mail.php inside the site, which .htaccess blocks from the web.
  *
- * Returns null when the file is missing, so mail() is used instead.
+ * storage/mail.example.php shows the format. Neither file is in git.
  */
+function mail_config_files(): array
+{
+    return [
+        dirname(ROOT, 2) . '/clientcarex-mail.php',
+        ROOT . '/storage/mail.php',
+    ];
+}
+
+/** Loaded SMTP settings, or null when no usable credentials file exists. */
 function smtp_config(): ?array
 {
-    $file = ROOT . '/storage/mail.php';
-    if (!is_file($file)) {
+    $file = null;
+    foreach (mail_config_files() as $candidate) {
+        if (is_file($candidate) && is_readable($candidate)) {
+            $file = $candidate;
+            break;
+        }
+    }
+    if ($file === null) {
         return null;
     }
     $cfg = require $file;
