@@ -63,7 +63,7 @@ function log_enquiry(array $data, bool $mailed, string $error = '', string $via 
 {
     $file = ROOT . '/storage/enquiries.log';
     @mkdir(dirname($file), 0775, true);
-    $row = $data + ['mailed' => $mailed, 'via' => $via, 'to' => MAIL_TO, 'at' => date('c')];
+    $row = $data + ['mailed' => $mailed, 'via' => $via, 'to' => enquiry_recipient(), 'at' => date('c')];
     if ($error !== '') {
         $row['mail_error'] = $error;
     }
@@ -229,12 +229,13 @@ function deliver_enquiry(array $values): array
 
     $errors = [];
     $smtp   = smtp_config();
+    $to     = enquiry_recipient();
     if ($smtp !== null) {
         // Try the configured port first, then the other common one, since
         // shared hosts often block one of them.
         $ports = array_unique([(int) $smtp['port'], (int) $smtp['port'] === 465 ? 587 : 465]);
         foreach ($ports as $port) {
-            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, MAIL_TO, $values['email'], $subject, $body);
+            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, $to, $values['email'], $subject, $body);
             if ($ok) {
                 return [true, '', 'smtp:' . $port];
             }
@@ -246,7 +247,7 @@ function deliver_enquiry(array $values): array
     }
 
     $ok = @mail(
-        MAIL_TO,
+        $to,
         encode_header($subject),
         $body,
         [
@@ -277,6 +278,14 @@ function encode_header(string $value): string
         : $value;
 }
 
+/** Where enquiries are delivered: the address chosen on the setup page, else MAIL_TO. */
+function enquiry_recipient(): string
+{
+    $smtp = smtp_config();
+
+    return !empty($smtp['to']) && filter_var($smtp['to'], FILTER_VALIDATE_EMAIL) ? $smtp['to'] : MAIL_TO;
+}
+
 /**
  * SMTP settings from storage/mail.php, which is outside version control:
  *
@@ -303,7 +312,7 @@ function smtp_config(): ?array
         return null;
     }
 
-    return $cfg + ['port' => 465, 'from' => '', 'timeout' => 15];
+    return $cfg + ['port' => 465, 'from' => '', 'to' => '', 'timeout' => 15];
 }
 
 /**

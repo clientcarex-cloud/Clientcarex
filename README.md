@@ -191,7 +191,20 @@ but not emailed", or a red error naming the field or the network problem.
 Without JavaScript the same endpoint re-renders the page with the errors, or
 redirects to `/contact?sent=1#enquiry`.
 
-### Sending over SMTP (recommended on shared hosting)
+### Connecting the mailbox (no file editing needed)
+
+Open **`/homepage/mail-setup`** on the live site, enter the mailbox that
+should send the email and its password, choose where enquiries are delivered,
+and press the button. The page logs in to Hostinger's SMTP, sends a test
+email, and only then writes `storage/mail.php`. A wrong password is explained
+on screen and never saved; failed attempts are rate-limited. Note the address
+stays under `/homepage/` because the root rewrite only knows the public pages.
+
+Hostinger's hosting machines answer for `smtp.hostinger.com` with their own
+certificate, so the saved settings skip certificate verification on that hop
+(`'insecure' => true`), as Hostinger's own PHPMailer guidance does.
+
+### Or by hand
 
 Create `storage/mail.php` — it is git-ignored and not web-accessible:
 
@@ -202,6 +215,8 @@ Create `storage/mail.php` — it is git-ignored and not web-accessible:
     'user' => 'care@clientcarex.com',
     'pass' => '…',                       // the mailbox password
     'from' => 'care@clientcarex.com',    // a mailbox the login is allowed to send as
+    'to'   => 'care@clientcarex.com',    // optional: where enquiries go (default MAIL_TO)
+    'insecure' => true,                  // needed on Hostinger hosting, see above
 ];
 ```
 
@@ -250,9 +265,8 @@ module catalogue, and the 90-Day Business Transformation Challenge.
    30-day notice period, the 5-working-day reconciliation window and the
    payment terms all appear in the legal pages and the FAQs. Change them in
    `app/config.php` and `app/content.php`, not page by page.
-4. **Confirm mail works.** Put the mailbox's SMTP details in
-   `storage/mail.php` (see "The growth-audit form"), send a test through
-   `/contact` and check the recipient inbox and `storage/enquiries.log`.
+4. **Confirm mail works.** Open `/homepage/mail-setup`, connect the mailbox
+   (see "The growth-audit form"), then send a test through `/contact`.
 5. **Fill in the social links.** The four footer icons are `#` placeholders in
    `SOCIAL` in `app/config.php`.
 6. **Check the client logos.** Eight are shown in the "Brands that trusted us to

@@ -110,6 +110,14 @@ const PAGES = [
         'title' => 'Billing & Refund Policy — ClientcareX',
         'description' => 'How revenue share is measured, reconciled, invoiced and refunded, and how automation project payments work.',
     ],
+    'mail-setup' => [
+        'view'    => 'mail-setup',
+        'nav'     => '',
+        'cache'   => false,
+        'noindex' => true,
+        'title'   => 'Contact form email setup — ClientcareX',
+        'description' => 'Connect the contact form to the mailbox that should receive enquiries.',
+    ],
     '404' => [
         'view'    => '404',
         'nav'     => '',

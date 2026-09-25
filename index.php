@@ -48,7 +48,8 @@ $route = request_route();
 
 /* ---- Hide the install folder: /homepage/contact -> /contact ----------- */
 $requestPath = (string) strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
-if (CLEAN_URLS && BASE !== '' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)
+// The mail-setup page is not in the root rewrite list, so it stays at /homepage/mail-setup.
+if (CLEAN_URLS && BASE !== '' && $route !== 'mail-setup' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)
     && ($requestPath === BASE || str_starts_with($requestPath, BASE . '/'))) {
     $query = (string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
     header('Location: ' . url($route) . ($query !== '' ? '?' . $query : ''), true, 301);
@@ -111,10 +112,18 @@ if ($route === 'contact') {
     }
 }
 
+/* ---- Contact-form email setup ----------------------------------------- */
+$setup = null;
+if ($route === 'mail-setup') {
+    require ROOT . '/app/enquiry.php';
+    require ROOT . '/app/mail-setup.php';
+    $setup = $_SERVER['REQUEST_METHOD'] === 'POST' ? handle_mail_setup() : mail_setup_state();
+}
+
 /* ---- Render ----------------------------------------------------------- */
 $html = view('layout', [
     'page'    => $page + ['route' => $route],
-    'content' => view('pages/' . $page['view'], ['form' => $form]),
+    'content' => view('pages/' . $page['view'], ['form' => $form, 'setup' => $setup]),
 ]);
 
 send_page($html, $route, $status, $cacheable);
