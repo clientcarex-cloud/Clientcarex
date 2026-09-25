@@ -18,6 +18,8 @@
  */
 declare(strict_types=1);
 
+require_once ROOT . '/app/mail-template.php';
+
 const TOKEN_LIFETIME = 7200; // 2 hours
 const TOKEN_MIN_AGE  = 2;    // a bot fills the form faster than this
 
@@ -207,23 +209,7 @@ function handle_enquiry(): array
  */
 function deliver_enquiry(array $values): array
 {
-    $labels = [
-        'name' => 'Name', 'company' => 'Company', 'email' => 'Email', 'phone' => 'Phone',
-        'interest' => 'Interested in', 'revenue' => 'Monthly revenue', 'message' => 'Message',
-    ];
-    $body = '';
-    foreach ($values as $key => $value) {
-        $body .= $labels[$key] . ': ' . ($value === '' ? '—' : $value) . "\n";
-    }
-    $body .= "\nSent " . date('d M Y, H:i T') . ' from ' . SITE_URL . '/contact';
-    if (!empty($_SERVER['REMOTE_ADDR'])) {
-        $body .= ' (IP ' . header_safe((string) $_SERVER['REMOTE_ADDR']) . ')';
-    }
-    $body .= "\n";
-
-    $subject = 'Growth audit request — ' . $values['name']
-        . ($values['company'] !== '' ? ' (' . $values['company'] . ')' : '');
-
+    $mail   = enquiry_email($values);
     $domain = (string) parse_url(SITE_URL, PHP_URL_HOST);
     $from   = 'no-reply@' . $domain;
 
@@ -235,7 +221,7 @@ function deliver_enquiry(array $values): array
         // shared hosts often block one of them.
         $ports = array_unique([(int) $smtp['port'], (int) $smtp['port'] === 465 ? 587 : 465]);
         foreach ($ports as $port) {
-            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, $to, $values['email'], $subject, $body);
+            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, $to, $values['email'], $mail);
             if ($ok) {
                 return [true, '', 'smtp:' . $port];
             }
@@ -246,16 +232,16 @@ function deliver_enquiry(array $values): array
         }
     }
 
-    $ok = @mail(
+    $mime = mime_alternative($mail['text'], $mail['html']);
+    $ok   = @mail(
         $to,
-        encode_header($subject),
-        $body,
+        encode_header($mail['subject']),
+        $mime['body'],
         [
-            'From'                      => SITE_NAME . ' <' . $from . '>',
-            'Reply-To'                  => $values['email'],
-            'MIME-Version'              => '1.0',
-            'Content-Type'              => 'text/plain; charset=UTF-8',
-            'Content-Transfer-Encoding' => '8bit',
+            'From'         => SITE_NAME . ' <' . $from . '>',
+            'Reply-To'     => $values['email'],
+            'MIME-Version' => '1.0',
+            'Content-Type' => $mime['type'],
         ]
     );
 
@@ -320,8 +306,10 @@ function smtp_config(): ?array
  *
  * @return array{0: bool, 1: string}
  */
-function smtp_send(array $cfg, string $from, string $to, string $replyTo, string $subject, string $body): array
+function smtp_send(array $cfg, string $from, string $to, string $replyTo, array $mail): array
 {
+    $mime = mime_alternative($mail['text'], $mail['html']);
+
     $port    = (int) $cfg['port'];
     $timeout = (int) $cfg['timeout'];
     $scheme  = $port === 465 ? 'ssl://' : 'tcp://';
@@ -439,14 +427,13 @@ function smtp_send(array $cfg, string $from, string $to, string $replyTo, string
         'From: ' . encode_header(SITE_NAME) . ' <' . $from . '>',
         'To: <' . $to . '>',
         'Reply-To: <' . $replyTo . '>',
-        'Subject: ' . encode_header($subject),
+        'Subject: ' . encode_header($mail['subject']),
         'Message-ID: <' . bin2hex(random_bytes(12)) . '@' . $host . '>',
         'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Type: ' . $mime['type'],
     ];
     // Dot-stuffing: a line that is only "." would end the message early.
-    $data = preg_replace('/^\./m', '..', str_replace(["\r\n", "\r"], "\n", $body));
+    $data = preg_replace('/^\./m', '..', str_replace(["\r\n", "\r"], "\n", $mime['body']));
     $data = str_replace("\n", "\r\n", (string) $data);
 
     if ($err = $say(implode("\r\n", $headers) . "\r\n\r\n" . $data . "\r\n.", [250])) {

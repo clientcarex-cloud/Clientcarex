@@ -200,6 +200,14 @@ email, and only then writes `storage/mail.php`. A wrong password is explained
 on screen and never saved; failed attempts are rate-limited. Note the address
 stays under `/homepage/` because the root rewrite only knows the public pages.
 
+Once email is connected the page answers **404** so it cannot be found or
+probed. To run it again (a new mailbox, or a changed password), create an
+empty file `storage/setup.unlock` on the server, use the page, then delete
+that file. Deleting `storage/mail.php` also re-opens it.
+
+Enquiries arrive as a branded HTML email (`app/mail-template.php`) with a
+plain-text alternative, a details table, the message, and a reply button.
+
 Hostinger's hosting machines answer for `smtp.hostinger.com` with their own
 certificate, so the saved settings skip certificate verification on that hop
 (`'insecure' => true`), as Hostinger's own PHPMailer guidance does.

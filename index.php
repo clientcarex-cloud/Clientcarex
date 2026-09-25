@@ -117,7 +117,13 @@ $setup = null;
 if ($route === 'mail-setup') {
     require ROOT . '/app/enquiry.php';
     require ROOT . '/app/mail-setup.php';
-    $setup = $_SERVER['REQUEST_METHOD'] === 'POST' ? handle_mail_setup() : mail_setup_state();
+    if (mail_setup_locked()) {
+        $route  = '404';
+        $page   = PAGES['404'];
+        $status = 404;
+    } else {
+        $setup = $_SERVER['REQUEST_METHOD'] === 'POST' ? handle_mail_setup() : mail_setup_state();
+    }
 }
 
 /* ---- Render ----------------------------------------------------------- */

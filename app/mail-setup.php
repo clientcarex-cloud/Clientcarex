@@ -16,6 +16,16 @@ declare(strict_types=1);
 const SETUP_MAX_FAILURES = 8;     // per hour, across all visitors
 const SETUP_SMTP_HOST    = 'smtp.hostinger.com';
 
+/**
+ * Once email is connected the page answers 404, so it cannot be found or
+ * probed. To run it again, delete storage/mail.php or create an empty file
+ * named storage/setup.unlock (and remove it afterwards).
+ */
+function mail_setup_locked(): bool
+{
+    return smtp_config() !== null && !is_file(ROOT . '/storage/setup.unlock');
+}
+
 /** What the page shows before anything is submitted. */
 function mail_setup_state(): array
 {
@@ -120,15 +130,11 @@ function handle_mail_setup(): array
         'insecure' => true,
     ];
 
-    $subject = 'Contact form test — ' . SITE_NAME;
-    $body    = "This is a test from the contact-form setup page at " . SITE_URL . "/homepage/mail-setup.\n\n"
-        . "It worked: the website can now send email through " . $user . ".\n"
-        . "Enquiries from the contact form will arrive at " . $to . ".\n\n"
-        . 'Sent ' . date('d M Y, H:i T') . "\n";
+    $mail = setup_test_email($user, $to);
 
     $attempts = [];
     foreach ([465, 587] as $port) {
-        [$ok, $err] = smtp_send(['port' => $port] + $cfg, $user, $to, $user, $subject, $body);
+        [$ok, $err] = smtp_send(['port' => $port] + $cfg, $user, $to, $user, $mail);
         if ($ok) {
             $cfg['port'] = $port;
             $saved = save_mail_config($cfg);
