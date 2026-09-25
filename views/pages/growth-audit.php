@@ -56,31 +56,7 @@ part('page-hero', [
 
 <section class="section section--paper">
   <div class="container">
-    <div class="form-layout">
-      <aside class="form-aside" data-reveal>
-        <span class="eyebrow">Before you start</span>
-        <h2>What happens next</h2>
-        <p>
-          We fund every campaign we run, so we choose partners as carefully as
-          you choose an agency. The more honest the numbers, the faster we can
-          tell you whether the model fits.
-        </p>
-
-        <?php part('check-list', ['items' => [
-            'Reviewed by a partner, not a sales desk',
-            'A reply within one working day — yes, no, or a call',
-            'Nothing you send is shared outside the team',
-            'No fee, no commitment, nothing to sign',
-        ]]) ?>
-
-        <p class="muted" style="font-size:.9375rem">
-          Just want to ask a quick question?
-          <a class="link-arrow" href="<?= url('contact') ?>">Use the short contact form</a>
-        </p>
-
-        <?php part('contact-strip', ['style' => 'grid-template-columns:1fr; margin-top:1.5rem']) ?>
-      </aside>
-
+    <div class="form-layout form-layout--single">
       <form class="form form--wide" id="audit" method="post" action="<?= url('growth-audit') ?>#audit" novalidate
             data-enquiry data-email="<?= e(EMAIL) ?>" data-phone="<?= e(PHONE) ?>" data-reveal>
         <div class="form__status<?= $status['tone'] !== '' ? ' form__status--' . $status['tone'] : '' ?>"

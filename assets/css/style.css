@@ -1246,8 +1246,10 @@ ul, ol { margin: 0; padding: 0; }
 }
 @media (min-width: 960px) {
   .form-layout { grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); }
+  .form-layout--single { grid-template-columns: minmax(0, 1fr); }
   .form-aside { position: sticky; top: 6rem; }
 }
+.form-layout--single { max-width: 52rem; margin-inline: auto; }
 .form-aside h2 { margin-bottom: .75rem; }
 .form-aside > p { color: var(--muted); font-size: 1.0625rem; }
 .form--wide { gap: 1.375rem; }
