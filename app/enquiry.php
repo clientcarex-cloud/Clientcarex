@@ -227,9 +227,22 @@ function deliver_enquiry(array $values): array
     $domain = (string) parse_url(SITE_URL, PHP_URL_HOST);
     $from   = 'no-reply@' . $domain;
 
-    $smtp = smtp_config();
+    $errors = [];
+    $smtp   = smtp_config();
     if ($smtp !== null) {
-        return smtp_send($smtp, $smtp['from'] ?: $from, MAIL_TO, $values['email'], $subject, $body);
+        // Try the configured port first, then the other common one, since
+        // shared hosts often block one of them.
+        $ports = array_unique([(int) $smtp['port'], (int) $smtp['port'] === 465 ? 587 : 465]);
+        foreach ($ports as $port) {
+            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, MAIL_TO, $values['email'], $subject, $body);
+            if ($ok) {
+                return [true, ''];
+            }
+            $errors[] = 'port ' . $port . ': ' . $err;
+            if (!str_starts_with($err, 'smtp connect')) {
+                break; // reached the server; the other port will not change a login or send error
+            }
+        }
     }
 
     $ok = @mail(
@@ -249,9 +262,10 @@ function deliver_enquiry(array $values): array
         return [true, ''];
     }
 
-    $last = error_get_last();
+    $last     = error_get_last();
+    $errors[] = 'mail(): ' . ($last['message'] ?? 'returned false');
 
-    return [false, 'mail(): ' . ($last['message'] ?? 'returned false')];
+    return [false, implode(' | ', $errors)];
 }
 
 /** RFC 2047 encode a header value when it carries non-ASCII characters. */
@@ -302,9 +316,34 @@ function smtp_send(array $cfg, string $from, string $to, string $replyTo, string
     $timeout = (int) $cfg['timeout'];
     $scheme  = $port === 465 ? 'ssl://' : 'tcp://';
 
-    $sock = @stream_socket_client($scheme . $cfg['host'] . ':' . $port, $errno, $errstr, $timeout);
+    $context = stream_context_create(['ssl' => [
+        'peer_name'         => $cfg['host'],
+        'SNI_enabled'       => true,
+        'verify_peer'       => empty($cfg['insecure']),
+        'verify_peer_name'  => empty($cfg['insecure']),
+        'allow_self_signed' => !empty($cfg['insecure']),
+    ]]);
+
+    // A TLS failure reports errno 0 and an empty message; the reason is in
+    // the PHP warning, so collect that instead.
+    $warning = '';
+    set_error_handler(static function (int $no, string $msg) use (&$warning): bool {
+        $warning = $warning === '' ? $msg : $warning; // the first warning names the cause
+
+        return true;
+    });
+    try {
+        $sock = stream_socket_client(
+            $scheme . $cfg['host'] . ':' . $port, $errno, $errstr, $timeout,
+            STREAM_CLIENT_CONNECT, $context
+        );
+    } finally {
+        restore_error_handler();
+    }
     if ($sock === false) {
-        return [false, 'smtp connect: ' . $errstr . ' (' . $errno . ')'];
+        $reason = trim((string) $errstr) !== '' ? $errstr . ' (' . $errno . ')' : ($warning !== '' ? $warning : 'no response (' . $errno . ')');
+
+        return [false, 'smtp connect: ' . $reason];
     }
     stream_set_timeout($sock, $timeout);
 
@@ -348,8 +387,19 @@ function smtp_send(array $cfg, string $from, string $to, string $replyTo, string
         if ($err = $say('STARTTLS', [220])) {
             return $fail('starttls', $err);
         }
-        if (!stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-            return $fail('starttls', 'TLS negotiation failed');
+        $warning = '';
+        set_error_handler(static function (int $no, string $msg) use (&$warning): bool {
+            $warning = $warning === '' ? $msg : $warning;
+
+            return true;
+        });
+        try {
+            $tls = stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+        } finally {
+            restore_error_handler();
+        }
+        if ($tls !== true) {
+            return $fail('starttls', $warning !== '' ? $warning : 'TLS negotiation failed');
         }
         if ($err = $say('EHLO ' . $host, [250])) {
             return $fail('ehlo', $err);
