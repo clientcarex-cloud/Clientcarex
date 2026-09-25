@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             };
             // Same settings send_enquiry_mail() uses.
             if ($smtp) {
-                $port = (int) ($smtp['port'] ?? 465);
+                $port = $transport === 'smtp587' ? 587 : (int) ($smtp['port'] ?? 465);
                 $mail->Host       = (string) ($smtp['host'] ?? 'smtp.hostinger.com');
                 $mail->Port       = $port;
                 $mail->SMTPAuth   = true;
@@ -115,6 +115,82 @@ foreach ([465, 587, 25] as $p) {
         fclose($fp);
     }
 }
+
+/* ---- TLS probes: why does 465 fail? ---------------------------------- */
+function tls_errors(): string
+{
+    $out = [];
+    while ($e = openssl_error_string()) {
+        $out[] = $e;
+    }
+    $last = error_get_last()['message'] ?? '';
+
+    return trim($last . ($out ? ' | OpenSSL: ' . implode(' ; ', $out) : ''));
+}
+
+function peer_cert($stream): string
+{
+    $cert = stream_context_get_params($stream)['options']['ssl']['peer_certificate'] ?? null;
+    $info = $cert ? openssl_x509_parse($cert) : null;
+
+    return $info
+        ? 'CN=' . ($info['subject']['CN'] ?? '?') . ' · issuer=' . ($info['issuer']['O'] ?? $info['issuer']['CN'] ?? '?')
+          . ' · expires ' . date('Y-m-d', $info['validTo_time_t'])
+        : 'no certificate';
+}
+
+$ip = gethostbyname($host);
+$probes = [];
+foreach ([true, false] as $verify) {
+    error_clear_last();
+    $ctx = stream_context_create(['ssl' => [
+        'verify_peer' => $verify, 'verify_peer_name' => $verify, 'allow_self_signed' => !$verify,
+        'peer_name' => $host, 'SNI_enabled' => true, 'capture_peer_cert' => true,
+    ]]);
+    $fp = @stream_socket_client("ssl://$host:465", $errno, $errstr, 8, STREAM_CLIENT_CONNECT, $ctx);
+    $label = 'Port 465 SSL, certificate check ' . ($verify ? 'ON' : 'OFF');
+    if ($fp) {
+        stream_set_timeout($fp, 8);
+        $probes[$label] = 'OK · banner: ' . trim((string) fgets($fp, 512)) . ' · ' . peer_cert($fp);
+        fclose($fp);
+    } else {
+        $probes[$label] = "FAILED ($errno) $errstr " . tls_errors();
+    }
+}
+
+// Port 587: plain banner, then STARTTLS upgrade.
+error_clear_last();
+$fp = @stream_socket_client("tcp://$host:587", $errno, $errstr, 8);
+if ($fp) {
+    stream_set_timeout($fp, 8);
+    $read = static function () use ($fp): string {
+        $r = '';
+        while (($l = fgets($fp, 512)) !== false) {
+            $r .= $l;
+            if (!isset($l[3]) || $l[3] === ' ') {
+                break;
+            }
+        }
+        return trim($r);
+    };
+    $banner = $read();
+    fwrite($fp, "EHLO debug.local\r\n");
+    $read();
+    fwrite($fp, "STARTTLS\r\n");
+    $st = $read();
+    stream_context_set_option($fp, 'ssl', 'peer_name', $host);
+    stream_context_set_option($fp, 'ssl', 'capture_peer_cert', true);
+    $tls = str_starts_with($st, '220') && @stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+    $probes['Port 587 banner'] = $banner;
+    $probes['Port 587 STARTTLS'] = $tls ? 'OK · ' . peer_cert($fp) : "FAILED · server said: $st " . tls_errors();
+    fclose($fp);
+} else {
+    $probes['Port 587'] = "FAILED ($errno) $errstr";
+}
+
+$ca = openssl_get_cert_locations();
+$probes['CA bundle'] = ($ca['default_cert_file'] ?? '?') . (is_file($ca['default_cert_file'] ?? '') ? ' (exists)' : ' (MISSING)')
+    . ' · openssl.cafile=' . (ini_get('openssl.cafile') ?: '—');
 
 $domain = substr((string) strrchr($smtp['user'] ?? MAIL_FROM, '@'), 1);
 $mx = $txt = $dmarc = [];
@@ -195,6 +271,7 @@ $env = [
     <label>Transport
       <select name="transport">
         <option value="form" <?= ($_POST['transport'] ?? '') !== 'phpmail' ? 'selected' : '' ?>>Same as contact form (<?= $smtp ? 'SMTP ' . $h($host) : 'localhost:25' ?>)</option>
+        <option value="smtp587" <?= ($_POST['transport'] ?? '') === 'smtp587' ? 'selected' : '' ?>>SMTP <?= $h($host) ?> port 587 + STARTTLS</option>
         <option value="phpmail" <?= ($_POST['transport'] ?? '') === 'phpmail' ? 'selected' : '' ?>>PHP mail() — for comparison</option>
       </select>
     </label>
@@ -229,6 +306,13 @@ $env = [
   <table>
     <?php foreach ($ports as $p => $v): ?>
       <tr><th>Port <?= $p ?></th><td class="<?= str_starts_with($v, 'open') ? 'ok' : 'bad' ?>"><?= $h($v) ?></td></tr>
+    <?php endforeach ?>
+  </table>
+
+  <h2>TLS / SMTP probes (<?= $h($host) ?> → <?= $h($ip) ?>)</h2>
+  <table>
+    <?php foreach ($probes as $k => $v): ?>
+      <tr><th><?= $h($k) ?></th><td class="<?= str_starts_with($v, 'FAILED') || str_contains($v, 'MISSING') ? 'bad' : (str_starts_with($v, 'OK') ? 'ok' : '') ?>"><?= $h($v) ?></td></tr>
     <?php endforeach ?>
   </table>
 
