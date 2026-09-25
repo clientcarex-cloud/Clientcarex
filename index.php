@@ -98,7 +98,12 @@ if ($page === null) {
 }
 
 /* ---- Growth-audit enquiry -------------------------------------------- */
-$form = ['errors' => [], 'values' => [], 'sent' => isset($_GET['sent'])];
+$sent = (string) ($_GET['sent'] ?? '');
+$form = [
+    'errors' => [],
+    'values' => [],
+    'state'  => $sent === '1' ? 'sent' : ($sent === 'logged' ? 'logged' : ''), // outcome after the redirect
+];
 if ($route === 'contact') {
     require ROOT . '/app/enquiry.php';
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

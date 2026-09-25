@@ -35,6 +35,10 @@
   --mint-50: #ebfef6;
   --white: #ffffff;
 
+  /* Form validation */
+  --danger: #c53030;
+  --danger-50: #fff5f5;
+
   /* Semantic */
   --bg: var(--white);
   --text: var(--ink);
@@ -1164,6 +1168,74 @@ ul, ol { margin: 0; padding: 0; }
 }
 .field textarea { resize: vertical; min-height: 8rem; }
 .field__hint { font-size: .8125rem; color: var(--ink-400); }
+.field__hint a { color: var(--brand-700); text-decoration: underline; text-underline-offset: 2px; }
+.field__optional { font-family: var(--font-body); font-weight: 400; color: var(--ink-400); }
+
+/* Validation: a red field with its message right underneath. The error
+   slot is always in the DOM; it only takes up room once it has text. */
+.field__error {
+  display: none;
+  font-size: .8125rem;
+  font-weight: 500;
+  color: var(--danger);
+}
+.field__error:not(:empty) { display: block; }
+.field--invalid input,
+.field--invalid select,
+.field--invalid textarea,
+.field [aria-invalid="true"] {
+  border-color: var(--danger);
+  background: var(--danger-50);
+}
+.field--invalid input:focus,
+.field--invalid select:focus,
+.field--invalid textarea:focus { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(197, 48, 48, .15); }
+
+/* Outcome banner: success, warning (saved but not emailed) or error. */
+.form__status {
+  display: flex;
+  gap: .75rem;
+  align-items: flex-start;
+  padding: .9rem 1.1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: .9375rem;
+  line-height: 1.45;
+  color: var(--ink-700);
+}
+.form__status[hidden] { display: none; }
+.form__status-icon {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: .05rem;
+  border-radius: 50%;
+  background: currentColor;
+  -webkit-mask: var(--status-icon) center / contain no-repeat;
+  mask: var(--status-icon) center / contain no-repeat;
+}
+.form__status--ok    { --status-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m8 12 3 3 5-6'/%3E%3C/svg%3E"); color: #14532d; background: #ecfdf3; border-color: #a7f3c4; }
+.form__status--warn  { --status-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3 2 20h20L12 3z'/%3E%3Cpath d='M12 10v4M12 17.5v.01'/%3E%3C/svg%3E"); color: #6b4b12; background: #fff8ea; border-color: #ffe0a8; }
+.form__status--error { --status-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 7v6M12 16.5v.01'/%3E%3C/svg%3E"); color: #7f1d1d; background: var(--danger-50); border-color: #fecaca; }
+.form__status a { color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.form__foot { text-align: center; margin: -.25rem 0 0; }
+
+/* Sending state */
+.btn[aria-busy="true"] { opacity: .75; cursor: progress; pointer-events: none; }
+.btn[aria-busy="true"] [data-submit-label]::after {
+  content: "";
+  display: inline-block;
+  width: .9em;
+  height: .9em;
+  margin-left: .55em;
+  vertical-align: -.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* --------------------------------------------------------------------------
    25. Prose (legal pages)

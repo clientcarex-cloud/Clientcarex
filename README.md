@@ -154,7 +154,7 @@ the cache invalidates itself whenever a file under `app/` or `views/` changes.
 | Conditional requests | Every response carries an `ETag`; a returning visitor gets `304 Not Modified` with no body. |
 | Compression | HTML is gzipped once at cache-write time (level 9) rather than on every request. |
 | Immutable assets | CSS, JS and images are served with `?v=<mtime>` and a one-year `immutable` cache header. |
-| No render-blocking JS | 2.6 KB of vanilla JS, deferred. The copyright year and the enquiry form are handled server-side, so no JS is needed for either. |
+| No render-blocking JS | One small vanilla JS file, deferred. The copyright year is server-side; the enquiry form works without JS and is only enhanced by it. |
 
 Cache invalidation is automatic: the cache key includes a fingerprint of every
 file under `app/` and `views/`, plus the current year. To clear it by hand:
@@ -173,12 +173,42 @@ Set `CACHE_ENABLED` to `false` in `app/config.php` to turn it off.
 a signed-token CSRF check and a honeypot field, then:
 
 1. appended to `storage/enquiries.log` (one JSON object per line), and
-2. emailed to `MAIL_TO` in `app/config.php` via PHP's `mail()`.
+2. emailed to `MAIL_TO` in `app/config.php` — over SMTP when
+   `storage/mail.php` exists, otherwise via PHP's `mail()`.
 
 The log is written **before** mail is attempted, so an enquiry is never lost if
-the host's mail transport is unconfigured or down. Check `mailed:false` entries
-in the log after go-live to confirm mail is actually working — and if the host
-blocks `mail()`, swap the call in `app/enquiry.php` for SMTP.
+the host's mail transport is unconfigured or down. When delivery fails the
+visitor is told so (and pointed at the phone number and email address) rather
+than shown a false "thanks", and the log row carries `mailed:false` plus a
+`mail_error` explaining why.
+
+### What the visitor sees
+
+`assets/js/main.js` validates each field as it is left (name, email, phone,
+message length — the same rules as the server) and submits with `fetch`,
+so the outcome appears inside the form: a green "thanks", an amber "recorded
+but not emailed", or a red error naming the field or the network problem.
+Without JavaScript the same endpoint re-renders the page with the errors, or
+redirects to `/contact?sent=1#enquiry`.
+
+### Sending over SMTP (recommended on shared hosting)
+
+Create `storage/mail.php` — it is git-ignored and not web-accessible:
+
+```php
+<?php return [
+    'host' => 'smtp.hostinger.com',
+    'port' => 465,                       // 465 = TLS from the start, 587 = STARTTLS
+    'user' => 'care@clientcarex.com',
+    'pass' => '…',                       // the mailbox password
+    'from' => 'care@clientcarex.com',    // a mailbox the login is allowed to send as
+];
+```
+
+Send a test through `/contact` and check `storage/enquiries.log`: the newest
+row should say `mailed:true`. If not, `mail_error` holds the SMTP server's
+reply (a `535` is a wrong user/password; a connect error means the host
+blocks outbound SMTP on that port — try the other one).
 
 Fields captured: name, company, email, phone, `interest` (from `INTERESTS`),
 `revenue` (from `REVENUE_BANDS`) and the free-text message. The last two are
@@ -220,8 +250,9 @@ module catalogue, and the 90-Day Business Transformation Challenge.
    30-day notice period, the 5-working-day reconciliation window and the
    payment terms all appear in the legal pages and the FAQs. Change them in
    `app/config.php` and `app/content.php`, not page by page.
-4. **Confirm mail works.** Send a test through `/contact` and check the
-   recipient inbox and `storage/enquiries.log`.
+4. **Confirm mail works.** Put the mailbox's SMTP details in
+   `storage/mail.php` (see "The growth-audit form"), send a test through
+   `/contact` and check the recipient inbox and `storage/enquiries.log`.
 5. **Fill in the social links.** The four footer icons are `#` placeholders in
    `SOCIAL` in `app/config.php`.
 6. **Check the client logos.** Eight are shown in the "Brands that trusted us to
