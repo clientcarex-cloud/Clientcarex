@@ -104,10 +104,10 @@ $form = [
     'values' => [],
     'state'  => $sent === '1' ? 'sent' : ($sent === 'logged' ? 'logged' : ''), // outcome after the redirect
 ];
-if ($route === 'contact') {
+if (in_array($route, FORM_ROUTES, true)) {
     require ROOT . '/app/enquiry.php';
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $form = handle_enquiry() + $form;
+        $form = handle_enquiry($route) + $form;
     }
 }
 

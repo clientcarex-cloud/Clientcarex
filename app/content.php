@@ -403,6 +403,133 @@ const REVENUE_BANDS = [
     'Over ₹1 crore / month',
 ];
 
+/**
+ * The growth-audit application on /growth-audit, section by section.
+ *
+ * Each section is a step of the form; each entry in `fields` is either one
+ * field or a list of fields that share a row. Field keys:
+ *   id, label, type (text|email|tel|url|select|textarea|checks), req,
+ *   auto (autocomplete), max (characters), hint, placeholder, options,
+ *   rows (textarea), msg (message shown when a required field is empty).
+ *
+ * Validation, the page and the notification email all read this one array,
+ * so adding a question is one entry here.
+ */
+const GROWTH_AUDIT_FORM = [
+    [
+        'title' => 'About the founder',
+        'lede'  => 'Who we would be working with. We back people before businesses.',
+        'fields' => [
+            [
+                ['id' => 'founder_name', 'label' => 'Full name', 'type' => 'text', 'req' => true, 'auto' => 'name', 'max' => 120, 'msg' => 'Please tell us your name.'],
+                ['id' => 'founder_role', 'label' => 'Your role', 'type' => 'text', 'auto' => 'organization-title', 'max' => 120, 'placeholder' => 'e.g. Founder & CEO, Co-founder, Director'],
+            ],
+            [
+                ['id' => 'email', 'label' => 'Work email', 'type' => 'email', 'req' => true, 'auto' => 'email', 'max' => 254, 'msg' => 'Please enter your work email so we can reply.'],
+                ['id' => 'phone', 'label' => 'Phone / WhatsApp', 'type' => 'tel', 'req' => true, 'auto' => 'tel', 'max' => 30, 'msg' => 'Please add a number we can reach you on.'],
+            ],
+            [
+                ['id' => 'linkedin', 'label' => 'LinkedIn profile', 'type' => 'url', 'auto' => 'url', 'max' => 255, 'placeholder' => 'https://linkedin.com/in/…'],
+                ['id' => 'location', 'label' => 'City & country', 'type' => 'text', 'auto' => 'address-level2', 'max' => 120, 'placeholder' => 'e.g. Hyderabad, India'],
+            ],
+        ],
+    ],
+    [
+        'title' => 'Founder experience',
+        'lede'  => 'How long you have been at this, and what you have built before.',
+        'fields' => [
+            [
+                ['id' => 'experience', 'label' => 'Years running a business', 'type' => 'select', 'req' => true,
+                    'options' => ['Under 1 year', '1–3 years', '3–5 years', '5–10 years', 'Over 10 years']],
+                ['id' => 'ventures', 'label' => 'Businesses started so far', 'type' => 'select', 'req' => true,
+                    'options' => ['This is my first business', 'This is my second business', 'Three or more businesses']],
+            ],
+            ['id' => 'commitment', 'label' => 'Time on this business', 'type' => 'select', 'req' => true,
+                'options' => ['Full-time on this business', 'Part-time, alongside a job', 'One of several businesses I run']],
+            ['id' => 'background', 'label' => 'Your background and track record', 'type' => 'textarea', 'req' => true, 'rows' => 5, 'max' => 3000,
+                'placeholder' => 'e.g. 8 years in FMCG sales, then started a D2C snacks brand in 2021. Grew it to ₹40 lakh/month on Amazon, sold the marketplace side in 2024. Now building a subscription line.',
+                'hint' => 'Previous ventures, exits, failures and what you learned. Industry experience counts even if it was as an employee.',
+                'msg' => 'Please tell us a little about your background.'],
+        ],
+    ],
+    [
+        'title' => 'About the business',
+        'lede'  => 'What you sell, where it is today and what it earns.',
+        'fields' => [
+            [
+                ['id' => 'company', 'label' => 'Business name', 'type' => 'text', 'req' => true, 'auto' => 'organization', 'max' => 120, 'msg' => 'Please tell us the name of the business.'],
+                ['id' => 'company_website', 'label' => 'Website', 'type' => 'url', 'auto' => 'url', 'max' => 255, 'placeholder' => 'https://'],
+            ],
+            [
+                ['id' => 'industry', 'label' => 'Industry', 'type' => 'select', 'req' => true,
+                    'options' => ['E-commerce / D2C', 'B2B products or services', 'SaaS / software', 'Education / coaching', 'Healthcare / wellness', 'Real estate', 'Local or home services', 'Manufacturing / distribution', 'Finance / insurance', 'Hospitality / travel', 'Other']],
+                ['id' => 'years_operating', 'label' => 'Years in operation', 'type' => 'select', 'req' => true,
+                    'options' => ['Not launched yet', 'Under 1 year', '1–3 years', '3–5 years', 'Over 5 years']],
+            ],
+            ['id' => 'offer', 'label' => 'What do you sell, to whom, and at what price?', 'type' => 'textarea', 'req' => true, 'rows' => 4, 'max' => 3000,
+                'placeholder' => 'e.g. Ayurvedic hair-care kits for women 25–40, ₹1,499 average order, sold on our Shopify store and Amazon. Roughly 60% gross margin.',
+                'hint' => 'Average order value and gross margin help most — they decide whether a revenue share can work.',
+                'msg' => 'Please describe what the business sells.'],
+            [
+                ['id' => 'stage', 'label' => 'Current stage', 'type' => 'select', 'req' => true,
+                    'options' => ['Idea or pre-launch', 'Pre-revenue, product ready', 'Early revenue — first customers', 'Growing — repeatable sales', 'Scaling — profitable, adding channels', 'Established — steady for years']],
+                ['id' => 'revenue', 'label' => 'Current monthly revenue', 'type' => 'select', 'req' => true, 'options' => REVENUE_BANDS],
+            ],
+            [
+                ['id' => 'revenue_trend', 'label' => 'Revenue over the last 6 months', 'type' => 'select', 'req' => true,
+                    'options' => ['Growing month on month', 'Flat', 'Declining', 'Too early to say']],
+                ['id' => 'margin', 'label' => 'Gross margin', 'type' => 'select',
+                    'options' => ['Under 20%', '20–40%', '40–60%', 'Over 60%', 'Not sure']],
+            ],
+            ['id' => 'team_size', 'label' => 'Team size', 'type' => 'select', 'req' => true,
+                'options' => ['Just me', '2–5 people', '6–20 people', '21–50 people', '51–200 people', 'Over 200 people']],
+        ],
+    ],
+    [
+        'title' => 'Marketing & operations today',
+        'lede'  => 'How customers find you now, and where the manual work piles up.',
+        'fields' => [
+            ['id' => 'channels', 'label' => 'Where do customers come from today?', 'type' => 'checks',
+                'options' => ['Meta ads (Facebook / Instagram)', 'Google ads', 'SEO & content', 'Marketplaces (Amazon, Flipkart…)', 'Referrals & word of mouth', 'Outbound sales team', 'Email / WhatsApp', 'Influencers / affiliates', 'Nothing consistent yet']],
+            [
+                ['id' => 'ad_spend', 'label' => 'Current monthly ad spend', 'type' => 'select', 'req' => true,
+                    'options' => ['Nothing yet', 'Under ₹50,000 / month', '₹50,000–2 lakh / month', '₹2–10 lakh / month', 'Over ₹10 lakh / month']],
+                ['id' => 'marketing_setup', 'label' => 'Who runs marketing now?', 'type' => 'select', 'req' => true,
+                    'options' => ['In-house team', 'An agency', 'Freelancers', 'Me, when I find time', 'Nobody yet']],
+            ],
+            ['id' => 'tools', 'label' => 'Tools you already use', 'type' => 'text', 'max' => 300,
+                'placeholder' => 'e.g. Shopify, Zoho CRM, Razorpay, Google Sheets, WhatsApp Business'],
+            ['id' => 'manual_work', 'label' => 'Where does manual work slow you down?', 'type' => 'textarea', 'rows' => 4, 'max' => 3000,
+                'placeholder' => 'e.g. Leads land in three inboxes and get followed up by hand. Invoices are raised one by one in Tally. Weekly reports take a day to compile.',
+                'hint' => 'Lead handling, follow-up, billing, support, reporting — anything a person does that a system could.'],
+        ],
+    ],
+    [
+        'title' => 'Working together',
+        'lede'  => 'What you want from the next twelve months, and why this partnership should happen.',
+        'fields' => [
+            [
+                ['id' => 'interest', 'label' => 'What are you after?', 'type' => 'select', 'req' => true, 'options' => INTERESTS],
+                ['id' => 'timeline', 'label' => 'When do you want to start?', 'type' => 'select', 'req' => true,
+                    'options' => ['As soon as possible', 'Within a month', 'In the next quarter', 'Just exploring for now']],
+            ],
+            ['id' => 'goal', 'label' => 'What does success look like in 12 months?', 'type' => 'textarea', 'req' => true, 'rows' => 4, 'max' => 3000,
+                'placeholder' => 'e.g. ₹1 crore/month in revenue with paid channels contributing half of it, and lead follow-up fully automated.',
+                'msg' => 'Please tell us what you want to achieve.'],
+            ['id' => 'why_us', 'label' => 'Why should we collaborate with you?', 'type' => 'textarea', 'req' => true, 'rows' => 5, 'max' => 3000,
+                'placeholder' => 'e.g. The product has 4.6★ across 2,000 reviews and 38% repeat purchase — the demand is proven, the acquisition engine is not. I can commit inventory and fulfilment for 3× current volume within 60 days.',
+                'hint' => "We fund the campaigns, so we are choosing partners as much as you are. Tell us what makes this worth backing — product proof, margins, capacity, your own commitment.",
+                'msg' => 'Please tell us why this partnership should happen.'],
+            [
+                ['id' => 'heard_from', 'label' => 'How did you hear about us?', 'type' => 'select',
+                    'options' => ['Google search', 'LinkedIn', 'Instagram / Facebook', 'Referral from a client', 'Event or webinar', 'Other']],
+                ['id' => 'referrer', 'label' => 'Referred by', 'type' => 'text', 'max' => 120, 'placeholder' => 'Name of the person or company, if any'],
+            ],
+            ['id' => 'notes', 'label' => 'Anything else we should know?', 'type' => 'textarea', 'rows' => 3, 'max' => 3000],
+        ],
+    ],
+];
+
 /** Initials for an avatar circle: "Ami Smith" -> "AS", "Khyati" -> "K". */
 function initials(string $name): string
 {

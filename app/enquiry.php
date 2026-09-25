@@ -1,6 +1,7 @@
 <?php
 /**
- * Growth-audit enquiry handling for /contact.
+ * Form handling for /contact (the short enquiry) and /growth-audit (the full
+ * application, driven by GROWTH_AUDIT_FORM in app/content.php).
  *
  * Stateless CSRF (an HMAC-signed timestamp) so no session cookie is set and
  * the rest of the site stays fully cacheable. Every enquiry is appended to
@@ -165,6 +166,104 @@ function validate_enquiry(): array
 }
 
 /**
+ * Validate the growth-audit application against GROWTH_AUDIT_FORM.
+ *
+ * @return array{errors: array<string,string>, values: array<string,mixed>}
+ */
+function validate_growth_audit(): array
+{
+    $errors = [];
+    if (!csrf_valid((string) ($_POST['token'] ?? ''))) {
+        $errors['form'] = 'This form has been open too long and needs a fresh start. Please reload the page and send it again.';
+    }
+
+    $values = [];
+    foreach (growth_audit_fields() as $f) {
+        $id   = $f['id'];
+        $req  = !empty($f['req']);
+        $max  = (int) ($f['max'] ?? 0);
+        $type = $f['type'];
+
+        if ($type === 'checks') {
+            $picked = array_values(array_filter(
+                array_map('header_safe', array_map('strval', (array) ($_POST[$id] ?? []))),
+                static fn (string $v): bool => $v !== ''
+            ));
+            $values[$id] = $picked;
+            if ($req && $picked === []) {
+                $errors[$id] = $f['msg'] ?? 'Please tick at least one option.';
+            } elseif (array_diff($picked, $f['options'])) {
+                $errors[$id] = 'Please choose from the options given.';
+            }
+            continue;
+        }
+
+        $raw   = (string) ($_POST[$id] ?? '');
+        $value = $type === 'textarea' ? trim(str_replace("\r\n", "\n", $raw)) : header_safe($raw);
+        $values[$id] = $value;
+
+        if ($value === '') {
+            if ($req) {
+                $errors[$id] = $f['msg'] ?? ($type === 'select' ? 'Please choose an option.' : 'Please fill this in.');
+            }
+            continue;
+        }
+        if ($max > 0 && mb_strlen($value) > $max) {
+            $errors[$id] = 'Please keep this under ' . number_format($max) . ' characters.';
+            continue;
+        }
+        switch ($type) {
+            case 'email':
+                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    $errors[$id] = 'That email address does not look right. Check for a typo, e.g. name@company.com.';
+                }
+                break;
+            case 'tel':
+                if (!preg_match('/^[+\d][\d\s().-]{5,24}$/', $value)) {
+                    $errors[$id] = 'That phone number does not look right. Digits, spaces and + are fine.';
+                }
+                break;
+            case 'url':
+                $url = preg_match('#^https?://#i', $value) ? $value : 'https://' . $value;
+                if (!filter_var($url, FILTER_VALIDATE_URL) || !str_contains((string) parse_url($url, PHP_URL_HOST), '.')) {
+                    $errors[$id] = 'That web address does not look right, e.g. https://yourcompany.com.';
+                } else {
+                    $values[$id] = $url;
+                }
+                break;
+            case 'select':
+                if (!in_array($value, $f['options'], true)) {
+                    $errors[$id] = 'Please choose one of the options.';
+                }
+                break;
+        }
+    }
+
+    return ['errors' => $errors, 'values' => $values];
+}
+
+/** Every field of GROWTH_AUDIT_FORM as a flat list, rows unpacked. */
+function growth_audit_fields(): array
+{
+    $out = [];
+    foreach (GROWTH_AUDIT_FORM as $step) {
+        foreach ($step['fields'] as $item) {
+            foreach (isset($item['id']) ? [$item] : $item as $f) {
+                $out[] = $f;
+            }
+        }
+    }
+
+    return $out;
+}
+
+/** Tick-box arrays joined for the log row and the email. */
+function flat_values(array $values): array
+{
+    return array_map(static fn ($v): string => is_array($v) ? implode(', ', $v) : (string) $v, $values);
+}
+
+/**
  * Validate and deliver a submission.
  *
  * On failure returns the errors and submitted values for re-rendering (HTML)
@@ -172,17 +271,20 @@ function validate_enquiry(): array
  *
  * @return array{errors: array<string,string>, values: array<string,string>}
  */
-function handle_enquiry(): array
+function handle_enquiry(string $route = 'contact'): array
 {
+    $audit  = $route === 'growth-audit';
+    $anchor = $audit ? '#audit' : '#enquiry';
+
     // Honeypot: a real browser never fills a hidden field. Pretend it worked.
     if (($_POST['website'] ?? '') !== '') {
         if (wants_json()) {
             json_response(['ok' => true, 'state' => 'sent'] + enquiry_message('sent'));
         }
-        redirect(url('contact') . '?sent=1#enquiry');
+        redirect(url($route) . '?sent=1' . $anchor);
     }
 
-    ['errors' => $errors, 'values' => $values] = validate_enquiry();
+    ['errors' => $errors, 'values' => $values] = $audit ? validate_growth_audit() : validate_enquiry();
 
     if ($errors) {
         if (wants_json()) {
@@ -192,24 +294,27 @@ function handle_enquiry(): array
         return ['errors' => $errors, 'values' => $values];
     }
 
-    [$mailed, $error, $via] = deliver_enquiry($values);
-    log_enquiry($values, $mailed, $error, $via);
+    $flat = flat_values($values);
+    $mail = $audit ? growth_audit_email($flat) : enquiry_email($flat);
+
+    [$mailed, $error, $via] = deliver_enquiry($mail, $flat['email']);
+    log_enquiry(['form' => $route] + $flat, $mailed, $error, $via);
 
     $state = $mailed ? 'sent' : 'logged';
     if (wants_json()) {
         json_response(['ok' => true, 'state' => $state] + enquiry_message($state));
     }
-    redirect(url('contact') . '?sent=' . ($mailed ? '1' : 'logged') . '#enquiry');
+    redirect(url($route) . '?sent=' . ($mailed ? '1' : 'logged') . $anchor);
 }
 
 /**
- * Email the enquiry to MAIL_TO. SMTP when configured, else PHP mail().
+ * Email a built message to MAIL_TO. SMTP when configured, else PHP mail().
  *
+ * @param array{subject: string, text: string, html: string} $mail
  * @return array{0: bool, 1: string, 2: string}  [delivered, error description, transport used]
  */
-function deliver_enquiry(array $values): array
+function deliver_enquiry(array $mail, string $replyTo): array
 {
-    $mail   = enquiry_email($values);
     $domain = (string) parse_url(SITE_URL, PHP_URL_HOST);
     $from   = 'no-reply@' . $domain;
 
@@ -221,7 +326,7 @@ function deliver_enquiry(array $values): array
         // shared hosts often block one of them.
         $ports = array_unique([(int) $smtp['port'], (int) $smtp['port'] === 465 ? 587 : 465]);
         foreach ($ports as $port) {
-            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, $to, $values['email'], $mail);
+            [$ok, $err] = smtp_send(['port' => $port] + $smtp, $smtp['from'] ?: $from, $to, $replyTo, $mail);
             if ($ok) {
                 return [true, '', 'smtp:' . $port];
             }
@@ -239,7 +344,7 @@ function deliver_enquiry(array $values): array
         $mime['body'],
         [
             'From'         => SITE_NAME . ' <' . $from . '>',
-            'Reply-To'     => $values['email'],
+            'Reply-To'     => $replyTo,
             'MIME-Version' => '1.0',
             'Content-Type' => $mime['type'],
         ]

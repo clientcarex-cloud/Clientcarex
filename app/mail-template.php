@@ -144,3 +144,115 @@ function enquiry_email(array $values): array
 
     return ['subject' => $subject, 'text' => $text, 'html' => $html];
 }
+
+/** Small building blocks shared by the notification emails. */
+function mail_eyebrow(string $text): string
+{
+    return '<p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:' . MAIL_BRAND . '">' . e($text) . '</p>';
+}
+
+/** One label/value row for the details table. */
+function mail_row(string $label, string $cell): string
+{
+    return '<tr>'
+        . '<td style="padding:11px 0;border-top:1px solid ' . MAIL_LINE . ';font-size:13px;color:' . MAIL_MUTED . ';width:38%;vertical-align:top">' . e($label) . '</td>'
+        . '<td style="padding:11px 0;border-top:1px solid ' . MAIL_LINE . ';font-size:15px;color:' . MAIL_INK . ';vertical-align:top">' . $cell . '</td>'
+        . '</tr>';
+}
+
+/** A value cell: dash when empty, a link for email / phone / url, text otherwise. */
+function mail_cell(string $type, string $value): string
+{
+    $link = 'style="color:' . MAIL_BRAND . ';font-weight:600"';
+
+    return match (true) {
+        $value === ''    => '<span style="color:' . MAIL_MUTED . '">—</span>',
+        $type === 'email' => '<a href="mailto:' . e($value) . '" ' . $link . '>' . e($value) . '</a>',
+        $type === 'tel'   => '<a href="tel:' . e(preg_replace('/[^\d+]/', '', $value)) . '" ' . $link . '>' . e($value) . '</a>',
+        $type === 'url'   => '<a href="' . e($value) . '" ' . $link . '>' . e(preg_replace('#^https?://#', '', $value)) . '</a>',
+        default           => e($value),
+    };
+}
+
+/** A long answer, set off from the table. */
+function mail_block(string $label, string $value): string
+{
+    $body = $value === ''
+        ? '<span style="color:' . MAIL_MUTED . '">Not answered.</span>'
+        : nl2br(e($value));
+
+    return '<p style="margin:16px 0 6px;font-size:13px;font-weight:700;color:' . MAIL_INK . '">' . e($label) . '</p>'
+        . '<div style="background:' . MAIL_PAPER . ';border-left:4px solid ' . MAIL_LIME . ';border-radius:0 10px 10px 0;padding:14px 16px;font-size:15px;line-height:1.65;color:' . MAIL_INK . '">' . $body . '</div>';
+}
+
+/**
+ * The growth-audit application notification: one block per section of
+ * GROWTH_AUDIT_FORM, short answers in a table and long answers as quotes.
+ *
+ * @param array<string,string> $values  every field id => answer (tick-box lists already joined)
+ * @return array{subject: string, text: string, html: string}
+ */
+function growth_audit_email(array $values): array
+{
+    $sentAt  = date('D, d M Y \a\t H:i T');
+    $ip      = header_safe((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    $founder = $values['founder_name'] ?? '';
+    $company = $values['company'] ?? '';
+    $who     = $founder . ($company !== '' ? ', ' . $company : '');
+    $subject = 'Growth audit application — ' . $who;
+
+    // The three answers that decide triage go in the summary line at the top.
+    $summary = array_filter([
+        $values['interest'] ?? '',
+        $values['stage'] ?? '',
+        ($values['revenue'] ?? '') !== '' ? 'Revenue: ' . $values['revenue'] : '',
+        ($values['timeline'] ?? '') !== '' ? 'Start: ' . $values['timeline'] : '',
+    ]);
+
+    $text  = "New growth audit application\n" . implode(' · ', $summary) . "\n";
+    $inner = '<p style="margin:0 0 6px;font-size:15px;line-height:1.6;color:' . MAIL_MUTED . '">'
+        . 'A founder has applied for a growth audit through the website. Every section of the form is below; replying to this email goes straight to them.</p>'
+        . '<p style="margin:0 0 22px;font-size:14px;line-height:1.6;font-weight:600;color:' . MAIL_INK . '">' . e(implode(' · ', $summary)) . '</p>';
+
+    foreach (GROWTH_AUDIT_FORM as $step) {
+        $rows   = '';
+        $blocks = '';
+        $text  .= "\n" . strtoupper($step['title']) . "\n" . str_repeat('-', mb_strlen($step['title'])) . "\n";
+
+        foreach ($step['fields'] as $item) {
+            foreach (isset($item['id']) ? [$item] : $item as $f) {
+                $value = (string) ($values[$f['id']] ?? '');
+                $text .= $f['label'] . ': ' . ($value === '' ? '—' : ($f['type'] === 'textarea' ? "\n" . $value . "\n" : $value)) . "\n";
+                if ($f['type'] === 'textarea') {
+                    $blocks .= mail_block($f['label'], $value);
+                } else {
+                    $rows .= mail_row($f['label'], mail_cell($f['type'], $value));
+                }
+            }
+        }
+
+        $inner .= mail_eyebrow($step['title'])
+            . ($rows !== '' ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px">' . $rows . '</table>' : '')
+            . $blocks
+            . '<div style="height:28px;line-height:28px;font-size:0">&nbsp;</div>';
+    }
+
+    $text .= "\nReply to " . ($values['email'] ?? '') . "\n"
+        . 'Sent ' . $sentAt . ' from ' . SITE_URL . '/growth-audit' . ($ip !== '' ? ' (IP ' . $ip . ')' : '') . "\n";
+
+    $inner .= mail_button('mailto:' . rawurlencode((string) ($values['email'] ?? '')) . '?subject=' . rawurlencode('Re: your growth audit application — ' . SITE_NAME), 'Reply to ' . $founder);
+
+    $footer = 'Sent ' . e($sentAt) . ' from the <a href="' . e(SITE_URL . '/growth-audit') . '" style="color:' . MAIL_MUTED . '">growth audit form</a>'
+        . ($ip !== '' ? ' · visitor IP ' . e($ip) : '')
+        . '<br>Every application is also kept on the server, so nothing is lost if this email goes astray.';
+
+    $html = mail_shell(
+        'New growth audit application from ' . $who,
+        'New application',
+        'Growth audit application from ' . $founder,
+        $inner,
+        $footer
+    );
+
+    return ['subject' => $subject, 'text' => $text, 'html' => $html];
+}

@@ -11,10 +11,10 @@ if (isset($errors['form'])) {
 $focus = array_key_first(array_diff_key($errors, ['form' => 1])) ?? (isset($errors['form']) ? 'name' : null);
 
 $fields = [
-    ['name', 'Full name', 'text', 'name', true],
-    ['company', 'Company', 'text', 'organization', false],
-    ['email', 'Work email', 'email', 'email', true],
-    ['phone', 'Phone', 'tel', 'tel', false],
+    ['name', 'Full name', 'text', 'name', true, 120, 'Please tell us your name.'],
+    ['company', 'Company', 'text', 'organization', false, 120, ''],
+    ['email', 'Work email', 'email', 'email', true, 254, 'Please enter your work email so we can reply.'],
+    ['phone', 'Phone', 'tel', 'tel', false, 30, ''],
 ];
 
 part('page-hero', [
@@ -59,14 +59,14 @@ part('page-hero', [
         </div>
 
         <div class="form__row">
-          <?php foreach (array_slice($fields, 0, 2) as [$id, $label, $type, $auto, $req]): ?>
-            <?php part('field', compact('id', 'label', 'type', 'auto', 'req', 'errors') + ['value' => $old($id), 'focus' => $focus === $id]) ?>
+          <?php foreach (array_slice($fields, 0, 2) as [$id, $label, $type, $auto, $req, $max, $msg]): ?>
+            <?php part('field', compact('id', 'label', 'type', 'auto', 'req', 'max', 'msg', 'errors') + ['value' => $old($id), 'focus' => $focus === $id]) ?>
           <?php endforeach ?>
         </div>
 
         <div class="form__row">
-          <?php foreach (array_slice($fields, 2) as [$id, $label, $type, $auto, $req]): ?>
-            <?php part('field', compact('id', 'label', 'type', 'auto', 'req', 'errors') + ['value' => $old($id), 'focus' => $focus === $id]) ?>
+          <?php foreach (array_slice($fields, 2) as [$id, $label, $type, $auto, $req, $max, $msg]): ?>
+            <?php part('field', compact('id', 'label', 'type', 'auto', 'req', 'max', 'msg', 'errors') + ['value' => $old($id), 'focus' => $focus === $id]) ?>
           <?php endforeach ?>
         </div>
 

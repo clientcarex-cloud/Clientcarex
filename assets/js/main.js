@@ -73,7 +73,8 @@
   }
 
   /* ---------------------------------------------------------------------
-     Growth-audit form — inline validation and in-place submission.
+     Enquiry forms — inline validation, in-place submission, and (on the
+     growth-audit form) one section at a time with a progress bar.
      Without JS the form still posts normally and the server re-renders it.
      --------------------------------------------------------------------- */
   var form = document.querySelector("form[data-enquiry]");
@@ -82,29 +83,35 @@
     var status = form.querySelector("[data-status]");
     var statusText = form.querySelector("[data-status-text]");
     var submit = form.querySelector("[data-submit]");
+    var submitLabel = submit.querySelector("[data-submit-label]");
+    var idleLabel = submitLabel ? submitLabel.textContent : "";
     var contactEmail = form.getAttribute("data-email") || "";
     var contactPhone = form.getAttribute("data-phone") || "";
     var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     var PHONE_RE = /^[+\d][\d\s().-]{5,24}$/;
+    var URL_RE = /^(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+([\/?#].*)?$/i;
 
-    // The same rules the server applies, so the visitor is told before the
-    // round trip rather than after it.
+    // The same rules the server applies, read off the input's own attributes
+    // (required, type, maxlength), so the visitor is told before the round
+    // trip rather than after it.
     function ruleFor(input) {
+      if (input.type === "checkbox" || input.type === "hidden") return "";
       var value = input.value.trim();
-      var name = input.name;
-      if (name === "name") {
-        if (!value) return "Please tell us your name.";
-        if (value.length > 120) return "Please keep your name under 120 characters.";
+      if (!value) {
+        if (!input.required) return "";
+        return input.getAttribute("data-required") ||
+          (input.tagName === "SELECT" ? "Please choose an option." : "Please fill this in.");
       }
-      if (name === "email") {
-        if (!value) return "Please enter your work email so we can reply.";
-        if (!EMAIL_RE.test(value)) return "That email address does not look right. Check for a typo, e.g. name@company.com.";
+      var max = parseInt(input.getAttribute("maxlength"), 10);
+      if (max && value.length > max) return "Please keep this under " + max.toLocaleString() + " characters.";
+      if (input.type === "email" && !EMAIL_RE.test(value)) {
+        return "That email address does not look right. Check for a typo, e.g. name@company.com.";
       }
-      if (name === "phone" && value && !PHONE_RE.test(value)) {
+      if (input.type === "tel" && !PHONE_RE.test(value)) {
         return "That phone number does not look right. Digits, spaces and + are fine.";
       }
-      if (name === "message" && value.length > 5000) {
-        return "Please keep the message under 5,000 characters.";
+      if (input.type === "url" && !URL_RE.test(value)) {
+        return "That web address does not look right, e.g. https://yourcompany.com.";
       }
       return "";
     }
@@ -132,7 +139,7 @@
     }
 
     var inputs = Array.prototype.slice.call(
-      form.querySelectorAll("input:not([type=hidden]):not(#website), select, textarea")
+      form.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not(#website), select, textarea")
     );
 
     inputs.forEach(function (input) {
@@ -143,7 +150,78 @@
       input.addEventListener("input", function () {
         if (input.getAttribute("aria-invalid") === "true") validate(input);
       });
+      input.addEventListener("change", function () {
+        if (input.getAttribute("aria-invalid") === "true") validate(input);
+      });
     });
+
+    /* Steps: only the growth-audit form has more than one [data-step]. */
+    var steps = Array.prototype.slice.call(form.querySelectorAll("[data-step]"));
+    var progress = Array.prototype.slice.call(form.querySelectorAll("[data-progress-item]"));
+    var finalActions = form.querySelector(".form-step__actions--final");
+    var stepped = steps.length > 1;
+    var current = 0;
+
+    function stepOf(input) {
+      var step = input.closest("[data-step]");
+      return step ? steps.indexOf(step) : steps.length - 1;
+    }
+
+    function showStep(index, focusFirst) {
+      if (!stepped) return;
+      current = Math.max(0, Math.min(index, steps.length - 1));
+      var last = current === steps.length - 1;
+      steps.forEach(function (step, n) {
+        step.hidden = n !== current;
+        step.classList.toggle("is-active", n === current);
+      });
+      progress.forEach(function (item, n) {
+        item.classList.toggle("is-current", n === current);
+        item.classList.toggle("is-done", n < current);
+        if (n === current) item.setAttribute("aria-current", "step");
+        else item.removeAttribute("aria-current");
+      });
+      if (finalActions) finalActions.hidden = !last;
+      if (focusFirst) {
+        var top = form.getBoundingClientRect().top + window.pageYOffset - 96;
+        window.scrollTo({ top: top, behavior: "smooth" });
+        var first = steps[current].querySelector("input:not([type=hidden]):not([type=checkbox]), select, textarea");
+        if (first) first.focus({ preventScroll: true });
+      }
+    }
+
+    function validateStep(index) {
+      var firstBad = null;
+      inputs.forEach(function (input) {
+        if (stepOf(input) !== index) return;
+        if (!validate(input) && !firstBad) firstBad = input;
+      });
+      return firstBad;
+    }
+
+    if (stepped) {
+      form.classList.add("form--stepped");
+      form.addEventListener("click", function (event) {
+        var next = event.target.closest("[data-step-next]");
+        var back = event.target.closest("[data-step-back]");
+        if (next) {
+          var bad = validateStep(current);
+          if (bad) {
+            showStatus("error", "Please fix the highlighted field" + (steps[current].querySelectorAll(".field--invalid").length > 1 ? "s" : "") + " before continuing.");
+            bad.focus();
+            return;
+          }
+          hideStatus();
+          showStep(current + 1, true);
+        } else if (back) {
+          hideStatus();
+          showStep(current - 1, true);
+        }
+      });
+      // After a failed no-JS post the server marks the bad field: open its step.
+      var serverBad = form.querySelector(".field--invalid input, .field--invalid select, .field--invalid textarea");
+      showStep(serverBad ? stepOf(serverBad) : 0, false);
+    }
 
     function showStatus(tone, html) {
       status.className = "form__status" + (tone ? " form__status--" + tone : "");
@@ -174,19 +252,27 @@
     function setBusy(busy) {
       submit.setAttribute("aria-busy", busy ? "true" : "false");
       submit.disabled = busy;
-      var label = submit.querySelector("[data-submit-label]");
-      if (label) label.textContent = busy ? "Sending…" : "Get my free growth audit";
+      if (submitLabel) submitLabel.textContent = busy ? "Sending…" : idleLabel;
     }
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
       hideStatus();
 
+      // Enter in a text field on an earlier step means "continue", not "send".
+      if (stepped && current < steps.length - 1) {
+        var stepBad = validateStep(current);
+        if (stepBad) { stepBad.focus(); return; }
+        showStep(current + 1, true);
+        return;
+      }
+
       var firstBad = null;
       inputs.forEach(function (input) {
         if (!validate(input) && !firstBad) firstBad = input;
       });
       if (firstBad) {
+        showStep(stepOf(firstBad), false);
         showStatus("error", "Please fix the highlighted field" + (form.querySelectorAll(".field--invalid").length > 1 ? "s" : "") + " and try again.");
         firstBad.focus();
         return;
@@ -212,9 +298,10 @@
       }).then(function (result) {
         var data = result.data;
         if (data.ok) {
-          showStatus(data.tone || "ok", escapeHtml(data.text || "Thanks — your request is with the team."));
           inputs.forEach(function (input) { setError(input, ""); });
           form.reset();
+          showStep(0, false);
+          showStatus(data.tone || "ok", escapeHtml(data.text || "Thanks — your request is with the team."));
           return;
         }
         var errors = data.errors || {};
@@ -226,6 +313,7 @@
         if (errors.form) {
           showStatus("error", escapeHtml(errors.form));
         } else if (focusTarget) {
+          showStep(stepOf(focusTarget), false);
           showStatus("error", "Please fix the highlighted field" + (Object.keys(errors).length > 1 ? "s" : "") + " and try again.");
         } else {
           showStatus("error", "Something went wrong on our side (HTTP " + result.http + ")." + fallbackContact());

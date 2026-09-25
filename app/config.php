@@ -35,6 +35,9 @@ const SHARE_RANGE = SHARE_MIN . '–' . SHARE_MAX;
 /** Where enquiries are delivered. */
 const MAIL_TO = EMAIL;
 
+/** Pages that post to themselves and are handled by app/enquiry.php. */
+const FORM_ROUTES = ['contact', 'growth-audit'];
+
 /** Full-page cache. Turn off while editing templates if you prefer. */
 const CACHE_ENABLED = true;
 
@@ -92,6 +95,13 @@ const PAGES = [
         'title' => 'Contact & Free Growth Audit — ClientcareX',
         'description' => 'Talk to the ClientcareX team. Book a free growth audit, ask about the revenue share, or scope an automation build.',
     ],
+    'growth-audit' => [
+        'view'  => 'growth-audit',
+        'nav'   => '',
+        'cache' => false,
+        'title' => 'Growth Audit Form — Apply to Work With ClientcareX',
+        'description' => 'Tell us about the founder, the business, its stage and revenue, and why we should partner. The team reviews every application and replies within one working day.',
+    ],
     'privacy' => [
         'view'  => 'privacy',
         'nav'   => '',
@@ -148,6 +158,7 @@ const FOOTER_COLUMNS = [
     'Company' => [
         ['About Us', 'contact'],
         ['Work With Us', 'contact'],
+        ['Growth Audit Form', 'growth-audit'],
         ['Blog & News', 'blog'],
         ['Contact Us', 'contact'],
     ],

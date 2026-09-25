@@ -65,7 +65,8 @@ app/
   icons.php            every SVG, defined once
   helpers.php          e() url() asset() view() part() minify_html()
   response.php         page cache, gzip, ETag / 304
-  enquiry.php          growth-audit form validation, CSRF, mail, enquiry log
+  enquiry.php          contact + growth-audit form validation, CSRF, mail, enquiry log
+  mail-template.php    the two notification emails
 
 views/
   layout.php           the one HTML skeleton
@@ -99,7 +100,8 @@ Nothing is generated and committed. Edit a file, reload the page.
 | `/how-it-works` | The four-step engagement, then each engine's own timeline |
 | `/pricing` | Both models side by side, what the share covers, what moves an automation quote |
 | `/blog` | Empty state — see below |
-| `/contact` | Free growth audit form |
+| `/contact` | Short enquiry form |
+| `/growth-audit` | The full growth-audit application: founder, track record, business and revenue, marketing today, why partner |
 | `/privacy` `/terms` `/refund` | Legal — **drafts, see the go-live checklist** |
 
 ### Adding a page
@@ -167,7 +169,32 @@ Set `CACHE_ENABLED` to `false` in `app/config.php` to turn it off.
 
 ---
 
-## The growth-audit form
+## The growth-audit application
+
+`/growth-audit` (linked from the footer under **Company → Growth Audit
+Form**) is the long form the team uses to qualify a partner before the call.
+It is five sections — about the founder, founder experience, about the
+business (stage, revenue, margin, team), marketing and operations today, and
+working together (goals, why we should collaborate, timeline).
+
+Every question lives in one array, `GROWTH_AUDIT_FORM` in `app/content.php`.
+The page, the server-side validation and the notification email all read it,
+so adding, removing or rewording a question is one edit there. A field can be
+`text`, `email`, `tel`, `url`, `select`, `textarea` or `checks` (tick boxes);
+put two fields in a nested array to place them side by side.
+
+With JavaScript the sections are shown one at a time with a progress bar,
+each validated before the next opens, and the visitor is returned to the
+right section if the server rejects anything. Without JavaScript the whole
+form is on the page and posts normally. Delivery, logging and the outcome
+messages are exactly as for the contact form below; the email groups the
+answers by section, with the long answers set off as quotes, and the log row
+carries `"form":"growth-audit"`.
+
+> When adding the route to a CRM root `.htaccess` (see "Running from a
+> sub-folder"), remember `growth-audit` needs to be in its rewrite list.
+
+## The contact form
 
 `/contact` posts to itself. Submissions are validated server-side, protected by
 a signed-token CSRF check and a honeypot field, then:
@@ -259,7 +286,7 @@ module catalogue, and the 90-Day Business Transformation Challenge.
    payment terms all appear in the legal pages and the FAQs. Change them in
    `app/config.php` and `app/content.php`, not page by page.
 4. **Confirm mail works.** Put the mailbox credentials in place (see "The
-   growth-audit form"), then send a test through `/contact`.
+   contact form"), then send a test through `/contact` and `/growth-audit`.
 5. **Fill in the social links.** The four footer icons are `#` placeholders in
    `SOCIAL` in `app/config.php`.
 6. **Check the client logos.** Eight are shown in the "Brands that trusted us to
