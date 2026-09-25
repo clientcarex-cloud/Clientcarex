@@ -30,6 +30,9 @@ require ROOT . '/app/icons.php';
 require ROOT . '/app/content.php';
 require ROOT . '/app/response.php';
 
+// Prefix for page links: the install folder stays out of the address bar.
+define('LINK_BASE', CLEAN_URLS ? '' : BASE);
+
 /** Path portion of the request, with the install directory and slashes trimmed. */
 function request_route(): string
 {
@@ -42,6 +45,15 @@ function request_route(): string
 }
 
 $route = request_route();
+
+/* ---- Hide the install folder: /homepage/contact -> /contact ----------- */
+$requestPath = (string) strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
+if (CLEAN_URLS && BASE !== '' && in_array($_SERVER['REQUEST_METHOD'], ['GET', 'HEAD'], true)
+    && ($requestPath === BASE || str_starts_with($requestPath, BASE . '/'))) {
+    $query = (string) parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+    header('Location: ' . url($route) . ($query !== '' ? '?' . $query : ''), true, 301);
+    exit;
+}
 
 /* ---- Redirects: keep the old static URLs working ---------------------- */
 if (str_ends_with($route, '.html')) {

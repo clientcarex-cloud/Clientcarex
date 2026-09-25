@@ -15,12 +15,12 @@ function e(?string $v): string
 function url(string $path = ''): string
 {
     if ($path === '' || $path[0] === '#') {
-        return BASE . '/' . $path;
+        return LINK_BASE . '/' . $path;
     }
     if (preg_match('#^(https?:|mailto:|tel:|//)#', $path)) {
         return $path;
     }
-    return BASE . '/' . ltrim($path, '/');
+    return LINK_BASE . '/' . ltrim($path, '/');
 }
 
 /** Asset URL with an mtime cache-buster, so assets can be cached forever. */

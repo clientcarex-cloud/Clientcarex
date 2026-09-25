@@ -228,7 +228,7 @@ module catalogue, and the 90-Day Business Transformation Challenge.
    run their growth" row — confirm each one is a real client of the *agency*
    and that you still have permission to use the mark.
 7. **Confirm the client dashboard link.** `APP_LOGIN` still points at
-   `clientcarex.com/ccx/authentication/login`. It appears in the top bar, the
+   `clientcarex.com/ccx/authentication/login`. It appears in the header, the
    mobile nav and the footer — repoint or remove it if that dashboard is not
    what live clients log into.
 8. **Turn on the HTTPS redirect** in `.htaccess` once the certificate is live.
@@ -243,6 +243,16 @@ Any PHP 8.1+ host. Upload the folder, point the document root at it, make sure
 ```bash
 chmod -R 775 storage
 ```
+
+### Running from a sub-folder beside the CRM
+
+In production the site lives in `/homepage` inside the CRM's web root, and
+`CLEAN_URLS` in `app/config.php` keeps the folder name out of page URLs
+(`/contact`, not `/homepage/contact`). The CRM root `.htaccess` (section 2,
+"Marketing site") already rewrites the clean URLs into `homepage/index.php` —
+its route list must stay in step with `PAGES` / `REDIRECTS` when a page is
+added. Old `/homepage/...` links are 301'd to their clean form by `index.php`.
+Assets keep loading from `/homepage/assets/`.
 
 Apache picks up `.htaccess` as-is. On nginx, route unknown paths to the front
 controller and deny the source directories:

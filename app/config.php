@@ -8,6 +8,14 @@ declare(strict_types=1);
 
 const SITE_NAME  = 'ClientcareX';
 const SITE_URL   = 'https://clientcarex.com';
+
+/**
+ * The site is installed in a sub-folder (e.g. /homepage) beside the CRM, and
+ * the web root rewrites page requests into it. With this on, page links carry
+ * no folder name and any /homepage/... URL is 301'd to its clean form. Assets
+ * still load from the folder directly. Turn off if the root rewrite is removed.
+ */
+const CLEAN_URLS = true;
 const COMPANY    = 'Clientcarex AI Private Limited';
 const PHONE      = '+91 93908 93024';
 const PHONE_HREF = '+919390893024';
