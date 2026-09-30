@@ -7,10 +7,6 @@
 <section class="section">
   <div class="container prose">
 
-    <?php part('notice', ['html' => '<strong>Draft for review.</strong> This policy describes the billing
-        model as published on this site. Have it reviewed by your legal adviser
-        and matched to your signed client agreements before go-live.']) ?>
-
     <h2>1. Performance marketing — what you are billed</h2>
     <p>
       One line item: the agreed percentage — between <?= SHARE_MIN ?> and

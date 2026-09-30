@@ -7,10 +7,6 @@
 <section class="section">
   <div class="container prose">
 
-    <?php part('notice', ['html' => '<strong>Draft for review.</strong> These terms describe the commercial
-        model as published on this site. Have them reviewed by your legal
-        adviser and aligned with your signed client agreements before go-live.']) ?>
-
     <h2>1. Agreement</h2>
     <p>
       These terms form an agreement between you (or the organisation you
